@@ -3,17 +3,16 @@
 // وضع المحاكاة (Emulator mode): اتركه true للتجربة المحلية بدون إنشاء مشروع حقيقي.
 // عند الانتقال للاستخدام الفعلي: غيّره إلى false وضع بيانات مشروعك الحقيقي
 // (من: Firebase Console > Project settings > General > Your apps > Web app).
-export const USE_EMULATORS = true;
+export const USE_EMULATORS = false;
 
-// هذه القيم مجرد أمثلة لوضع المحاكاة. استبدلها ببيانات مشروعك الحقيقي عندما تكون جاهزًا.
 // ملاحظة: هذه القيم ليست سرية ويمكن أن تظهر للعامة — الحماية الحقيقية تأتي من Firestore Rules.
 export const firebaseConfig = {
-  apiKey: "demo-api-key",
-  authDomain: "demo-rentracker.firebaseapp.com",
-  projectId: "demo-rentracker",
-  storageBucket: "demo-rentracker.appspot.com",
-  messagingSenderId: "000000000000",
-  appId: "1:000000000000:web:0000000000000000000000",
+  apiKey: "AIzaSyDCt11nl8VTTXLW-E2GyaDn8QeP4_HRsAA",
+  authDomain: "rentracker-29a3b.firebaseapp.com",
+  projectId: "rentracker-29a3b",
+  storageBucket: "rentracker-29a3b.firebasestorage.app",
+  messagingSenderId: "368758785221",
+  appId: "1:368758785221:web:d0365fb61166cfd86ddcac",
 };
 
 export const EMULATOR_HOSTS = {
