@@ -409,7 +409,7 @@ async function buildUnitAdminRow(unit) {
   row.innerHTML = `
     <span>${escapeAttr(unit.label)}</span>
     <span style="color:var(--muted)">${escapeAttr(unit.type)}</span>
-    <input type="number" data-field="rentAmount" value="${unit.rentAmount ?? 0}" min="0" />
+    ${field("الإيجار الافتراضي للوحدة", `<input type="number" data-field="rentAmount" value="${unit.rentAmount ?? 0}" min="0" />`)}
     <label style="display:flex;align-items:center;gap:6px;font-size:13px;">
       <input type="checkbox" data-field="active" ${unit.active ? "checked" : ""} /> فعّالة
     </label>
