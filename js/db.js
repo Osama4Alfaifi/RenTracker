@@ -107,7 +107,7 @@ export async function getMonthRows(units, year, month) {
       ? computeStatus(previous.rentDue, previous.cashAmount, previous.transferAmount).outstanding
       : 0;
     const tenancy = await getActiveTenancy(unit.id);
-    const baseRent = tenancy?.rentAmount ?? unit.rentAmount ?? 0;
+    const baseRent = tenancy?.rentAmount ?? 0;
 
     rows.push({
       unit,
@@ -187,7 +187,6 @@ export async function seedInitialData() {
       type: "غرفة عزاب",
       label: `غرفة ${i}`,
       unitNumber: i,
-      rentAmount: 0,
       order: i,
       active: true,
     });
@@ -200,7 +199,6 @@ export async function seedInitialData() {
       type: "محل",
       label: `محل ${i}`,
       unitNumber: i,
-      rentAmount: 0,
       order: i,
       active: true,
     });
@@ -212,7 +210,6 @@ export async function seedInitialData() {
       type: "غرفة عزاب",
       label: `غرفة ${i}`,
       unitNumber: i,
-      rentAmount: 0,
       order: 4 + i,
       active: true,
     });

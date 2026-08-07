@@ -395,8 +395,6 @@ async function loadUnitsAdminTab() {
         <option value="غرفة عزاب">غرفة عزاب</option>
         <option value="محل">محل</option>
       </select>
-      <input type="number" placeholder="الإيجار" data-new="rentAmount" min="0" />
-      <span></span>
       <button type="button" data-role="add-unit-btn">إضافة</button>
     </div>
   `;
@@ -409,19 +407,16 @@ async function loadUnitsAdminTab() {
   section.querySelector('[data-role="add-unit-btn"]').addEventListener("click", async () => {
     const labelInput = section.querySelector('[data-new="label"]');
     const typeSelect = section.querySelector('[data-new="type"]');
-    const rentInput = section.querySelector('[data-new="rentAmount"]');
     const label = labelInput.value.trim();
     if (!label) return;
     await addUnit({
       buildingId: building.id,
       label,
       type: typeSelect.value,
-      rentAmount: Number(rentInput.value) || 0,
       unitNumber: units.length + 1,
       order: units.length + 1,
     });
     labelInput.value = "";
-    rentInput.value = "";
     await loadUnitsAdminTab();
   });
 
@@ -441,19 +436,14 @@ async function buildUnitAdminRow(unit) {
   row.innerHTML = `
     <span>${escapeAttr(unit.label)}</span>
     <span style="color:var(--muted)">${escapeAttr(unit.type)}</span>
-    ${field("الإيجار الافتراضي للوحدة", `<input type="number" data-field="rentAmount" value="${unit.rentAmount ?? 0}" min="0" />`)}
     <label style="display:flex;align-items:center;gap:6px;font-size:13px;">
       <input type="checkbox" data-field="active" ${unit.active ? "checked" : ""} /> فعّالة
     </label>
-    <span></span>
   `;
   row.addEventListener("change", async (e) => {
     const field = e.target.dataset.field;
     if (!field) return;
-    const value = field === "active" ? e.target.checked
-      : field === "rentAmount" ? Number(e.target.value) || 0
-      : e.target.value;
-    await updateUnit(unit.id, { [field]: value });
+    await updateUnit(unit.id, { [field]: e.target.checked });
   });
   wrapper.appendChild(row);
 
@@ -483,6 +473,7 @@ async function buildUnitAdminRow(unit) {
       await loadUnitsAdminTab();
     });
   } else {
+    const lastTenancy = (await getTenancyHistory(unit.id))[0];
     tenancyBlock.innerHTML = `
       <span style="font-size:13px;color:var(--muted);flex-basis:100%">شاغرة — لا يوجد مستأجر حاليًا</span>
       ${field("اسم المستأجر", `<input type="text" data-nt="tenantName" />`)}
@@ -491,7 +482,7 @@ async function buildUnitAdminRow(unit) {
       ${field("اسم الكفيل", `<input type="text" data-nt="guarantorName" />`)}
       ${field("جوال الكفيل", `<input type="text" data-nt="guarantorPhone" />`)}
       ${field("تاريخ التأجير (بداية السكن)", `<input type="date" data-nt="moveInDate" value="${todayStr()}" />`)}
-      ${field("الإيجار الشهري", `<input type="number" data-nt="rentAmount" value="${unit.rentAmount ?? 0}" min="0" />`)}
+      ${field("الإيجار الشهري", `<input type="number" data-nt="rentAmount" value="${lastTenancy?.rentAmount ?? 0}" min="0" />`)}
       <button type="button" data-role="start-tenancy-btn">تسجيل مستأجر جديد</button>
     `;
     tenancyBlock.querySelector('[data-role="start-tenancy-btn"]').addEventListener("click", async () => {
