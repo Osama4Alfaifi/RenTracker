@@ -1,0 +1,424 @@
+:root {
+  --bg: #f4f6f8;
+  --card-bg: #ffffff;
+  --text: #1f2933;
+  --muted: #6b7785;
+  --border: #e1e5ea;
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --paid: #1a9c5b;
+  --paid-bg: #e7f7ee;
+  --unpaid: #d1443e;
+  --unpaid-bg: #fbeaea;
+  --radius: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, "Noto Sans Arabic", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.view[hidden] {
+  display: none;
+}
+
+/* ---------- Login ---------- */
+#login-view {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.login-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 32px;
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.login-card h1 {
+  margin: 0;
+  font-size: 22px;
+  text-align: center;
+}
+
+.login-card .subtitle {
+  margin: 0 0 8px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.login-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.login-card input {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+.error-text {
+  color: var(--unpaid);
+  font-size: 14px;
+  margin: 0;
+  text-align: center;
+}
+
+/* ---------- Buttons ---------- */
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.login-card button,
+#seed-btn {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary);
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.login-card button:hover,
+#seed-btn:hover {
+  background: var(--primary-dark);
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  color: var(--text);
+}
+
+.btn-ghost:hover {
+  background: var(--bg);
+}
+
+/* ---------- App shell ---------- */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-email {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 10px 20px 0;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.tab-btn {
+  border: none;
+  background: transparent;
+  padding: 10px 16px;
+  font-size: 15px;
+  color: var(--muted);
+  border-bottom: 3px solid transparent;
+}
+
+.tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+
+.tab-panel {
+  display: none;
+  padding: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+/* ---------- Dashboard ---------- */
+.seed-banner {
+  background: #fff7e6;
+  border: 1px solid #f2d492;
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.month-switcher {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.month-label {
+  font-size: 18px;
+  font-weight: 600;
+  min-width: 160px;
+  text-align: center;
+}
+
+.summary-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.summary-chip {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  min-width: 130px;
+  text-align: center;
+}
+
+.summary-chip .value {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.summary-chip .label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.building-section {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.building-section h2 {
+  margin: 0;
+  padding: 14px 18px;
+  font-size: 17px;
+  border-bottom: 1px solid var(--border);
+  background: #fafbfc;
+}
+
+.unit-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.unit-table th,
+.unit-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  text-align: start;
+}
+
+.unit-table th {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.unit-table input[type="text"],
+.unit-table input[type="number"],
+.unit-table input[type="date"],
+.unit-table select {
+  width: 100%;
+  min-width: 90px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.status-toggle {
+  border: none;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  min-width: 76px;
+}
+
+.status-toggle.paid {
+  background: var(--paid-bg);
+  color: var(--paid);
+}
+
+.status-toggle.unpaid {
+  background: var(--unpaid-bg);
+  color: var(--unpaid);
+}
+
+.method-field,
+.date-field {
+  display: none;
+}
+
+.method-field.visible,
+.date-field.visible {
+  display: block;
+}
+
+.save-indicator {
+  font-size: 12px;
+  color: var(--paid);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.save-indicator.show {
+  opacity: 1;
+}
+
+/* ---------- History ---------- */
+.history-filters {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.history-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.history-filters select {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  min-width: 180px;
+}
+
+.history-row {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.history-row .month {
+  font-weight: 600;
+  min-width: 100px;
+}
+
+.history-row .tenant {
+  color: var(--muted);
+}
+
+/* ---------- Units admin ---------- */
+.units-admin-building {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  padding: 16px;
+}
+
+.units-admin-building h2 {
+  margin-top: 0;
+}
+
+.unit-admin-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 100px 90px;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.unit-admin-row input,
+.unit-admin-row select {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: inherit;
+}
+
+@media (max-width: 720px) {
+  .unit-table thead {
+    display: none;
+  }
+  .unit-table,
+  .unit-table tbody,
+  .unit-table tr,
+  .unit-table td {
+    display: block;
+    width: 100%;
+  }
+  .unit-table tr {
+    padding: 10px 12px;
+    border-bottom: 2px solid var(--border);
+  }
+  .unit-table td {
+    border-bottom: none;
+    padding: 4px 0;
+  }
+  .unit-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 2px;
+  }
+  .unit-admin-row {
+    grid-template-columns: 1fr;
+  }
+}
