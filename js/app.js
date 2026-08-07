@@ -30,8 +30,29 @@ const state = {
   year: today.getFullYear(),
   month: today.getMonth() + 1,
   buildings: [],
+  selectedBuildingId: null,
   rowsByUnitId: new Map(), // unitId -> payment object currently shown
 };
+
+// Renders building-picker pill buttons into `container`, defaulting to the
+// first building if nothing is selected yet, and calling `onSelect` on change.
+function renderBuildingSubTabs(container, onSelect) {
+  if (!state.selectedBuildingId && state.buildings.length) {
+    state.selectedBuildingId = state.buildings[0].id;
+  }
+  container.innerHTML = state.buildings
+    .map(
+      (b) =>
+        `<button type="button" class="sub-tab-btn ${b.id === state.selectedBuildingId ? "active" : ""}" data-building-id="${b.id}">${b.name}</button>`
+    )
+    .join("");
+  container.querySelectorAll(".sub-tab-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      state.selectedBuildingId = btn.dataset.buildingId;
+      onSelect();
+    });
+  });
+}
 
 // ---------------- Auth wiring ----------------
 
@@ -89,6 +110,7 @@ const seedBanner = document.getElementById("seed-banner");
 const monthLabel = document.getElementById("month-label");
 const summaryBar = document.getElementById("summary-bar");
 const buildingsContainer = document.getElementById("buildings-container");
+const dashboardBuildingTabs = document.getElementById("dashboard-building-tabs");
 
 document.getElementById("seed-btn").addEventListener("click", async () => {
   await seedInitialData();
@@ -117,6 +139,7 @@ async function initDashboard() {
     monthLabel.textContent = "";
     summaryBar.innerHTML = "";
     buildingsContainer.innerHTML = "";
+    dashboardBuildingTabs.innerHTML = "";
     return;
   }
   state.buildings = await getBuildings();
@@ -125,37 +148,41 @@ async function initDashboard() {
 
 async function renderDashboard() {
   monthLabel.textContent = `${ARABIC_MONTHS[state.month - 1]} ${state.year}`;
+  renderBuildingSubTabs(dashboardBuildingTabs, renderDashboard);
   state.rowsByUnitId.clear();
   buildingsContainer.innerHTML = "";
 
-  for (const building of state.buildings) {
-    const units = await getUnits(building.id);
-    const rows = await getMonthRows(units, state.year, state.month);
-
-    const section = document.createElement("div");
-    section.className = "building-section";
-    section.innerHTML = `
-      <h2>${building.name}</h2>
-      <table class="unit-table">
-        <thead>
-          <tr>
-            <th>الوحدة</th><th>المستأجر</th><th>الإيجار</th><th>كاش</th><th>تحويل</th>
-            <th>نوع التحويل</th><th>المتأخر</th><th>الحالة</th><th>تاريخ الدفع</th><th>ملاحظات</th><th></th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    `;
-    const tbody = section.querySelector("tbody");
-
-    for (const row of rows) {
-      state.rowsByUnitId.set(row.unit.id, row.payment);
-      tbody.appendChild(buildUnitRow(row.unit, row.payment));
-    }
-
-    buildingsContainer.appendChild(section);
+  const building = state.buildings.find((b) => b.id === state.selectedBuildingId);
+  if (!building) {
+    renderSummaryBar();
+    return;
   }
 
+  const units = await getUnits(building.id);
+  const rows = await getMonthRows(units, state.year, state.month);
+
+  const section = document.createElement("div");
+  section.className = "building-section";
+  section.innerHTML = `
+    <h2>${building.name}</h2>
+    <table class="unit-table">
+      <thead>
+        <tr>
+          <th>الوحدة</th><th>المستأجر</th><th>الإيجار</th><th>كاش</th><th>تحويل</th>
+          <th>نوع التحويل</th><th>المتأخر</th><th>الحالة</th><th>تاريخ الدفع</th><th>ملاحظات</th><th></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  `;
+  const tbody = section.querySelector("tbody");
+
+  for (const row of rows) {
+    state.rowsByUnitId.set(row.unit.id, row.payment);
+    tbody.appendChild(buildUnitRow(row.unit, row.payment));
+  }
+
+  buildingsContainer.appendChild(section);
   renderSummaryBar();
 }
 
@@ -193,6 +220,7 @@ function buildUnitRow(unit, payment) {
     <td data-label="المستأجر">
       ${escapeAttr(payment.tenantName || "شاغرة")}
       ${payment.tenantPhone ? `<br><span style="color:var(--muted);font-size:12px">جوال: ${escapeAttr(payment.tenantPhone)}</span>` : ""}
+      ${payment.contractNumber ? `<br><span style="color:var(--muted);font-size:12px">عقد: ${escapeAttr(payment.contractNumber)}</span>` : ""}
       ${payment.guarantorName ? `<br><span style="color:var(--muted);font-size:12px">كفيل: ${escapeAttr(payment.guarantorName)}${payment.guarantorPhone ? " - " + escapeAttr(payment.guarantorPhone) : ""}</span>` : ""}
     </td>
     <td data-label="الإيجار"><input type="number" data-field="rentDue" value="${payment.rentDue ?? 0}" min="0" /></td>
@@ -332,6 +360,7 @@ async function renderTenancyHistory(unitId) {
           <span class="month">${t.moveInDate || "—"} ← ${t.moveOutDate || "حتى الآن"}</span>
           <span class="tenant">${escapeAttr(t.tenantName || "—")}</span>
           <span>${t.tenantPhone ? `جوال المستأجر: ${escapeAttr(t.tenantPhone)}` : ""}</span>
+          <span>${t.contractNumber ? `رقم العقد: ${escapeAttr(t.contractNumber)}` : ""}</span>
           <span>${t.guarantorName ? `الكفيل: ${escapeAttr(t.guarantorName)}` : ""}</span>
           <span>${t.guarantorPhone ? `جوال الكفيل: ${escapeAttr(t.guarantorPhone)}` : ""}</span>
           <span>الإيجار: ${t.rentAmount ?? 0}</span>
@@ -344,56 +373,59 @@ async function renderTenancyHistory(unitId) {
 // ---------------- Units admin ----------------
 
 const unitsAdminContainer = document.getElementById("units-admin-container");
+const unitsBuildingTabs = document.getElementById("units-building-tabs");
 
 async function loadUnitsAdminTab() {
   if (!state.buildings.length) state.buildings = await getBuildings();
+  renderBuildingSubTabs(unitsBuildingTabs, loadUnitsAdminTab);
   unitsAdminContainer.innerHTML = "";
 
-  for (const building of state.buildings) {
-    const units = await getUnits(building.id);
-    const section = document.createElement("div");
-    section.className = "units-admin-building";
-    section.innerHTML = `
-      <h2>${building.name}</h2>
-      <div data-role="unit-rows"></div>
-      <div class="unit-admin-row" data-role="add-row">
-        <input type="text" placeholder="اسم الوحدة (مثال: غرفة 16)" data-new="label" />
-        <select data-new="type">
-          <option value="غرفة عزاب">غرفة عزاب</option>
-          <option value="محل">محل</option>
-        </select>
-        <input type="number" placeholder="الإيجار" data-new="rentAmount" min="0" />
-        <span></span>
-        <button type="button" data-role="add-unit-btn">إضافة</button>
-      </div>
-    `;
+  const building = state.buildings.find((b) => b.id === state.selectedBuildingId);
+  if (!building) return;
 
-    const rowsContainer = section.querySelector('[data-role="unit-rows"]');
-    for (const unit of units) {
-      rowsContainer.appendChild(await buildUnitAdminRow(unit));
-    }
+  const units = await getUnits(building.id);
+  const section = document.createElement("div");
+  section.className = "units-admin-building";
+  section.innerHTML = `
+    <h2>${building.name}</h2>
+    <div data-role="unit-rows"></div>
+    <div class="unit-admin-row" data-role="add-row">
+      <input type="text" placeholder="اسم الوحدة (مثال: غرفة 16)" data-new="label" />
+      <select data-new="type">
+        <option value="غرفة عزاب">غرفة عزاب</option>
+        <option value="محل">محل</option>
+      </select>
+      <input type="number" placeholder="الإيجار" data-new="rentAmount" min="0" />
+      <span></span>
+      <button type="button" data-role="add-unit-btn">إضافة</button>
+    </div>
+  `;
 
-    section.querySelector('[data-role="add-unit-btn"]').addEventListener("click", async () => {
-      const labelInput = section.querySelector('[data-new="label"]');
-      const typeSelect = section.querySelector('[data-new="type"]');
-      const rentInput = section.querySelector('[data-new="rentAmount"]');
-      const label = labelInput.value.trim();
-      if (!label) return;
-      await addUnit({
-        buildingId: building.id,
-        label,
-        type: typeSelect.value,
-        rentAmount: Number(rentInput.value) || 0,
-        unitNumber: units.length + 1,
-        order: units.length + 1,
-      });
-      labelInput.value = "";
-      rentInput.value = "";
-      await loadUnitsAdminTab();
-    });
-
-    unitsAdminContainer.appendChild(section);
+  const rowsContainer = section.querySelector('[data-role="unit-rows"]');
+  for (const unit of units) {
+    rowsContainer.appendChild(await buildUnitAdminRow(unit));
   }
+
+  section.querySelector('[data-role="add-unit-btn"]').addEventListener("click", async () => {
+    const labelInput = section.querySelector('[data-new="label"]');
+    const typeSelect = section.querySelector('[data-new="type"]');
+    const rentInput = section.querySelector('[data-new="rentAmount"]');
+    const label = labelInput.value.trim();
+    if (!label) return;
+    await addUnit({
+      buildingId: building.id,
+      label,
+      type: typeSelect.value,
+      rentAmount: Number(rentInput.value) || 0,
+      unitNumber: units.length + 1,
+      order: units.length + 1,
+    });
+    labelInput.value = "";
+    rentInput.value = "";
+    await loadUnitsAdminTab();
+  });
+
+  unitsAdminContainer.appendChild(section);
 }
 
 function field(label, inputHtml) {
@@ -433,6 +465,7 @@ async function buildUnitAdminRow(unit) {
     tenancyBlock.innerHTML = `
       ${field("اسم المستأجر", `<input type="text" data-tfield="tenantName" value="${escapeAttr(tenancy.tenantName || "")}" />`)}
       ${field("جوال المستأجر", `<input type="text" data-tfield="tenantPhone" value="${escapeAttr(tenancy.tenantPhone || "")}" />`)}
+      ${field("رقم العقد", `<input type="text" data-tfield="contractNumber" value="${escapeAttr(tenancy.contractNumber || "")}" />`)}
       ${field("اسم الكفيل", `<input type="text" data-tfield="guarantorName" value="${escapeAttr(tenancy.guarantorName || "")}" />`)}
       ${field("جوال الكفيل", `<input type="text" data-tfield="guarantorPhone" value="${escapeAttr(tenancy.guarantorPhone || "")}" />`)}
       ${field("تاريخ التأجير (بداية السكن)", `<span style="font-size:13px">${tenancy.moveInDate || "—"}</span>`)}
@@ -454,6 +487,7 @@ async function buildUnitAdminRow(unit) {
       <span style="font-size:13px;color:var(--muted);flex-basis:100%">شاغرة — لا يوجد مستأجر حاليًا</span>
       ${field("اسم المستأجر", `<input type="text" data-nt="tenantName" />`)}
       ${field("جوال المستأجر", `<input type="text" data-nt="tenantPhone" />`)}
+      ${field("رقم العقد", `<input type="text" data-nt="contractNumber" />`)}
       ${field("اسم الكفيل", `<input type="text" data-nt="guarantorName" />`)}
       ${field("جوال الكفيل", `<input type="text" data-nt="guarantorPhone" />`)}
       ${field("تاريخ التأجير (بداية السكن)", `<input type="date" data-nt="moveInDate" value="${todayStr()}" />`)}
@@ -469,6 +503,7 @@ async function buildUnitAdminRow(unit) {
         buildingId: unit.buildingId,
         tenantName,
         tenantPhone: get("tenantPhone"),
+        contractNumber: get("contractNumber"),
         guarantorName: get("guarantorName"),
         guarantorPhone: get("guarantorPhone"),
         moveInDate: get("moveInDate") || todayStr(),

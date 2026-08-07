@@ -270,6 +270,36 @@ button:active {
   font-weight: 700;
 }
 
+.sub-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.sub-tab-btn {
+  border: 1.5px solid var(--border);
+  background: var(--card-bg);
+  color: var(--muted);
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.sub-tab-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary-dark);
+}
+
+.sub-tab-btn.active {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  border-color: transparent;
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
 .tab-panel {
   display: none;
   padding: 24px;
