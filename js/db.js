@@ -122,7 +122,6 @@ export async function getMonthRows(units, year, month) {
         tenantName: tenancy?.tenantName || "",
         tenantPhone: tenancy?.tenantPhone || "",
         guarantorName: tenancy?.guarantorName || "",
-        guarantorIdNumber: tenancy?.guarantorIdNumber || "",
         guarantorPhone: tenancy?.guarantorPhone || "",
         rentDue: baseRent + previousOutstanding,
         cashAmount: 0,

@@ -1,18 +1,25 @@
 :root {
-  --bg: #f4f6f8;
+  --bg: #eef1f8;
+  --bg-accent: #e7ecfb;
   --card-bg: #ffffff;
-  --text: #1f2933;
-  --muted: #6b7785;
-  --border: #e1e5ea;
-  --primary: #2563eb;
-  --primary-dark: #1d4ed8;
-  --paid: #1a9c5b;
-  --paid-bg: #e7f7ee;
-  --unpaid: #d1443e;
-  --unpaid-bg: #fbeaea;
-  --partial: #b8790f;
-  --partial-bg: #fdf1e0;
-  --radius: 10px;
+  --text: #1c2333;
+  --muted: #6b7488;
+  --border: #e3e7f0;
+  --primary: #4f46e5;
+  --primary-dark: #4338ca;
+  --primary-light: #eef0ff;
+  --accent: #f59e0b;
+  --paid: #15803d;
+  --paid-bg: #e8f8ee;
+  --unpaid: #dc2626;
+  --unpaid-bg: #fdecec;
+  --partial: #b45309;
+  --partial-bg: #fef3e2;
+  --radius: 14px;
+  --radius-sm: 9px;
+  --shadow-sm: 0 1px 3px rgba(30, 41, 59, 0.08);
+  --shadow-md: 0 8px 24px rgba(30, 41, 59, 0.10);
+  --shadow-lg: 0 16px 40px rgba(45, 55, 100, 0.16);
 }
 
 * {
@@ -22,8 +29,9 @@
 body {
   margin: 0;
   font-family: "Segoe UI", Tahoma, "Noto Sans Arabic", Arial, sans-serif;
-  background: var(--bg);
+  background: linear-gradient(160deg, var(--bg) 0%, var(--bg-accent) 55%, var(--bg) 100%);
   color: var(--text);
+  min-height: 100vh;
 }
 
 #login-view[hidden],
@@ -38,24 +46,70 @@ body {
   align-items: center;
   justify-content: center;
   padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+#login-view::before,
+#login-view::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.35;
+  z-index: 0;
+}
+
+#login-view::before {
+  width: 420px;
+  height: 420px;
+  background: var(--primary);
+  top: -140px;
+  inset-inline-end: -120px;
+}
+
+#login-view::after {
+  width: 340px;
+  height: 340px;
+  background: var(--accent);
+  bottom: -120px;
+  inset-inline-start: -100px;
 }
 
 .login-card {
+  position: relative;
+  z-index: 1;
   background: var(--card-bg);
   border-radius: var(--radius);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  padding: 32px;
+  box-shadow: var(--shadow-lg);
+  padding: 36px 32px;
   width: 100%;
-  max-width: 360px;
+  max-width: 380px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
+  animation: rise-in 0.45s ease-out;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .login-card h1 {
   margin: 0;
-  font-size: 22px;
+  font-size: 24px;
   text-align: center;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .login-card .subtitle {
@@ -73,10 +127,22 @@ body {
 }
 
 .login-card input {
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  padding: 11px 13px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
   font-size: 15px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.login-card input:focus,
+.tenancy-block input:focus,
+.unit-table input:focus,
+.unit-table select:focus,
+.unit-admin-row input:focus,
+.history-filters select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
 }
 
 .error-text {
@@ -90,34 +156,44 @@ body {
 button {
   cursor: pointer;
   font-family: inherit;
+  transition: transform 0.12s, box-shadow 0.15s, background 0.15s;
+}
+
+button:active {
+  transform: scale(0.97);
 }
 
 .login-card button,
 #seed-btn {
-  padding: 10px 16px;
+  padding: 11px 16px;
   border: none;
-  border-radius: 8px;
-  background: var(--primary);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: white;
   font-size: 15px;
   font-weight: 600;
+  box-shadow: var(--shadow-sm);
 }
 
 .login-card button:hover,
 #seed-btn:hover {
-  background: var(--primary-dark);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .btn-ghost {
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  background: var(--card-bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
   padding: 8px 14px;
   color: var(--text);
+  font-weight: 500;
 }
 
 .btn-ghost:hover {
-  background: var(--bg);
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary-dark);
 }
 
 /* ---------- App shell ---------- */
@@ -125,14 +201,19 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
-  background: var(--card-bg);
-  border-bottom: 1px solid var(--border);
+  padding: 16px 24px;
+  background: linear-gradient(120deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  box-shadow: var(--shadow-md);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .app-header h1 {
   margin: 0;
   font-size: 20px;
+  letter-spacing: 0.2px;
 }
 
 .header-right {
@@ -142,38 +223,64 @@ button {
 }
 
 .user-email {
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.85);
   font-size: 14px;
+}
+
+.app-header .btn-ghost {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: white;
+}
+
+.app-header .btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: white;
+  color: white;
 }
 
 .tabs {
   display: flex;
   gap: 4px;
-  padding: 10px 20px 0;
+  padding: 10px 24px 0;
   background: var(--card-bg);
   border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
 }
 
 .tab-btn {
   border: none;
   background: transparent;
-  padding: 10px 16px;
+  padding: 10px 18px;
   font-size: 15px;
   color: var(--muted);
   border-bottom: 3px solid transparent;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.tab-btn:hover {
+  background: var(--primary-light);
+  color: var(--primary-dark);
 }
 
 .tab-btn.active {
   color: var(--primary);
   border-bottom-color: var(--primary);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .tab-panel {
   display: none;
-  padding: 20px;
+  padding: 24px;
   max-width: 1100px;
   margin: 0 auto;
+  animation: fade-in 0.25s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .tab-panel.active {
@@ -182,12 +289,13 @@ button {
 
 /* ---------- Dashboard ---------- */
 .seed-banner {
-  background: #fff7e6;
+  background: linear-gradient(135deg, #fff7e6, #fdecc8);
   border: 1px solid #f2d492;
   border-radius: var(--radius);
-  padding: 16px;
-  margin-bottom: 16px;
+  padding: 18px;
+  margin-bottom: 18px;
   text-align: center;
+  box-shadow: var(--shadow-sm);
 }
 
 .month-switcher {
@@ -195,36 +303,52 @@ button {
   align-items: center;
   justify-content: center;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 .month-label {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 19px;
+  font-weight: 700;
   min-width: 160px;
   text-align: center;
+  color: var(--primary-dark);
 }
 
 .summary-bar {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 
 .summary-chip {
   background: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 12px 16px;
+  border-inline-start: 4px solid var(--primary);
+  border-radius: var(--radius-sm);
+  padding: 12px 18px;
   min-width: 130px;
   text-align: center;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s, box-shadow 0.15s;
 }
+
+.summary-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.summary-chip:nth-of-type(2) { border-inline-start-color: var(--paid); }
+.summary-chip:nth-of-type(3) { border-inline-start-color: var(--partial); }
+.summary-chip:nth-of-type(4) { border-inline-start-color: var(--unpaid); }
+.summary-chip:nth-of-type(5) { border-inline-start-color: var(--paid); }
+.summary-chip:nth-of-type(6) { border-inline-start-color: var(--unpaid); }
 
 .summary-chip .value {
   display: block;
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
 }
 
 .summary-chip .label {
@@ -236,16 +360,17 @@ button {
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  margin-bottom: 20px;
+  margin-bottom: 22px;
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
 
 .building-section h2 {
   margin: 0;
-  padding: 14px 18px;
+  padding: 16px 20px;
   font-size: 17px;
-  border-bottom: 1px solid var(--border);
-  background: #fafbfc;
+  color: white;
+  background: linear-gradient(120deg, var(--primary) 0%, var(--primary-dark) 100%);
 }
 
 .unit-table {
@@ -255,16 +380,27 @@ button {
 
 .unit-table th,
 .unit-table td {
-  padding: 10px 12px;
+  padding: 12px;
   border-bottom: 1px solid var(--border);
   font-size: 14px;
   text-align: start;
 }
 
+.unit-table tbody tr {
+  transition: background 0.12s;
+}
+
+.unit-table tbody tr:hover {
+  background: var(--primary-light);
+}
+
 .unit-table th {
   color: var(--muted);
-  font-weight: 600;
-  font-size: 13px;
+  font-weight: 700;
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  background: #fafbfe;
 }
 
 .unit-table input[type="text"],
@@ -273,20 +409,23 @@ button {
 .unit-table select {
   width: 100%;
   min-width: 90px;
-  padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  padding: 7px 9px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
   font-size: 14px;
   font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .status-toggle {
+  display: inline-block;
   border: none;
   border-radius: 999px;
   padding: 6px 14px;
   font-size: 13px;
   font-weight: 700;
   min-width: 76px;
+  text-align: center;
 }
 
 .status-toggle.paid {
@@ -312,10 +451,12 @@ button {
 .method-field.visible,
 .date-field.visible {
   display: block;
+  animation: fade-in 0.2s ease-out;
 }
 
 .save-indicator {
   font-size: 12px;
+  font-weight: 600;
   color: var(--paid);
   opacity: 0;
   transition: opacity 0.3s;
@@ -329,7 +470,7 @@ button {
 .history-filters {
   display: flex;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
   flex-wrap: wrap;
 }
 
@@ -342,16 +483,17 @@ button {
 }
 
 .history-filters select {
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  padding: 9px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
   min-width: 180px;
 }
 
 .history-row {
   background: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-inline-start: 4px solid var(--primary);
+  border-radius: var(--radius-sm);
   padding: 12px 16px;
   margin-bottom: 10px;
   display: flex;
@@ -359,11 +501,18 @@ button {
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.12s;
+}
+
+.history-row:hover {
+  transform: translateX(-2px);
 }
 
 .history-row .month {
-  font-weight: 600;
+  font-weight: 700;
   min-width: 100px;
+  color: var(--primary-dark);
 }
 
 .history-row .tenant {
@@ -375,12 +524,14 @@ button {
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  margin-bottom: 20px;
-  padding: 16px;
+  margin-bottom: 22px;
+  padding: 18px;
+  box-shadow: var(--shadow-sm);
 }
 
 .units-admin-building h2 {
   margin-top: 0;
+  color: var(--primary-dark);
 }
 
 .unit-admin-row {
@@ -388,36 +539,39 @@ button {
   grid-template-columns: 1fr 1fr 1fr 100px 90px;
   gap: 10px;
   align-items: center;
-  padding: 8px 0;
+  padding: 10px 0;
   border-bottom: 1px solid var(--border);
 }
 
 .unit-admin-row input,
 .unit-admin-row select {
-  padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  padding: 7px 9px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
   font-family: inherit;
 }
 
 .tenancy-block {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  padding: 8px 0 14px;
+  gap: 10px;
+  align-items: flex-end;
+  padding: 12px 14px;
+  background: var(--primary-light);
+  border-radius: var(--radius-sm);
   border-bottom: 1px solid var(--border);
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 .tenancy-block input {
-  padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  padding: 7px 9px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
   font-family: inherit;
   font-size: 13px;
   min-width: 110px;
   width: 100%;
+  background: var(--card-bg);
 }
 
 .tfield-group {
@@ -430,20 +584,24 @@ button {
 .tfield-label {
   font-size: 11px;
   color: var(--muted);
+  font-weight: 600;
 }
 
 .tenancy-block button {
-  padding: 6px 12px;
+  padding: 8px 14px;
   border: none;
-  border-radius: 6px;
-  background: var(--primary);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: white;
   font-size: 13px;
+  font-weight: 600;
   white-space: nowrap;
+  box-shadow: var(--shadow-sm);
 }
 
 .tenancy-block button:hover {
-  background: var(--primary-dark);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 @media (max-width: 720px) {
@@ -458,12 +616,15 @@ button {
     width: 100%;
   }
   .unit-table tr {
-    padding: 10px 12px;
-    border-bottom: 2px solid var(--border);
+    padding: 12px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
   }
   .unit-table td {
     border-bottom: none;
-    padding: 4px 0;
+    padding: 5px 0;
   }
   .unit-table td::before {
     content: attr(data-label);

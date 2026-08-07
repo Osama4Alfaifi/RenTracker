@@ -434,7 +434,6 @@ async function buildUnitAdminRow(unit) {
       ${field("اسم المستأجر", `<input type="text" data-tfield="tenantName" value="${escapeAttr(tenancy.tenantName || "")}" />`)}
       ${field("جوال المستأجر", `<input type="text" data-tfield="tenantPhone" value="${escapeAttr(tenancy.tenantPhone || "")}" />`)}
       ${field("اسم الكفيل", `<input type="text" data-tfield="guarantorName" value="${escapeAttr(tenancy.guarantorName || "")}" />`)}
-      ${field("رقم هوية الكفيل", `<input type="text" data-tfield="guarantorIdNumber" value="${escapeAttr(tenancy.guarantorIdNumber || "")}" />`)}
       ${field("جوال الكفيل", `<input type="text" data-tfield="guarantorPhone" value="${escapeAttr(tenancy.guarantorPhone || "")}" />`)}
       ${field("تاريخ التأجير (بداية السكن)", `<span style="font-size:13px">${tenancy.moveInDate || "—"}</span>`)}
       ${field("تاريخ الخروج (عند الإنهاء)", `<input type="date" data-role="move-out-date" value="${todayStr()}" />`)}
@@ -456,7 +455,6 @@ async function buildUnitAdminRow(unit) {
       ${field("اسم المستأجر", `<input type="text" data-nt="tenantName" />`)}
       ${field("جوال المستأجر", `<input type="text" data-nt="tenantPhone" />`)}
       ${field("اسم الكفيل", `<input type="text" data-nt="guarantorName" />`)}
-      ${field("رقم هوية الكفيل", `<input type="text" data-nt="guarantorIdNumber" />`)}
       ${field("جوال الكفيل", `<input type="text" data-nt="guarantorPhone" />`)}
       ${field("تاريخ التأجير (بداية السكن)", `<input type="date" data-nt="moveInDate" value="${todayStr()}" />`)}
       ${field("الإيجار الشهري", `<input type="number" data-nt="rentAmount" value="${unit.rentAmount ?? 0}" min="0" />`)}
@@ -472,7 +470,6 @@ async function buildUnitAdminRow(unit) {
         tenantName,
         tenantPhone: get("tenantPhone"),
         guarantorName: get("guarantorName"),
-        guarantorIdNumber: get("guarantorIdNumber"),
         guarantorPhone: get("guarantorPhone"),
         moveInDate: get("moveInDate") || todayStr(),
         rentAmount: Number(get("rentAmount")) || 0,
