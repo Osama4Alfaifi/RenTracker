@@ -403,10 +403,7 @@ async function buildUnitAdminRow(unit) {
   row.dataset.unitId = unit.id;
   row.innerHTML = `
     <input type="text" data-field="label" value="${escapeAttr(unit.label)}" />
-    <select data-field="type">
-      <option value="غرفة عزاب" ${unit.type === "غرفة عزاب" ? "selected" : ""}>غرفة عزاب</option>
-      <option value="محل" ${unit.type === "محل" ? "selected" : ""}>محل</option>
-    </select>
+    <span style="color:var(--muted)">${escapeAttr(unit.type)}</span>
     <input type="number" data-field="rentAmount" value="${unit.rentAmount ?? 0}" min="0" />
     <label style="display:flex;align-items:center;gap:6px;font-size:13px;">
       <input type="checkbox" data-field="active" ${unit.active ? "checked" : ""} /> فعّالة
