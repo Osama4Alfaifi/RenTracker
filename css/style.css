@@ -417,7 +417,19 @@ button {
   font-family: inherit;
   font-size: 13px;
   min-width: 110px;
-  flex: 1 1 110px;
+  width: 100%;
+}
+
+.tfield-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1 1 130px;
+}
+
+.tfield-label {
+  font-size: 11px;
+  color: var(--muted);
 }
 
 .tenancy-block button {

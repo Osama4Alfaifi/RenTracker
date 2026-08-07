@@ -192,8 +192,8 @@ function buildUnitRow(unit, payment) {
     <td data-label="الوحدة">${unit.label} <span style="color:var(--muted)">(${unit.type})</span></td>
     <td data-label="المستأجر">
       ${escapeAttr(payment.tenantName || "شاغرة")}
-      ${payment.tenantIdNumber ? `<br><span style="color:var(--muted);font-size:12px">${escapeAttr(payment.tenantIdNumber)}</span>` : ""}
-      ${payment.guarantorName ? `<br><span style="color:var(--muted);font-size:12px">كفيل: ${escapeAttr(payment.guarantorName)}</span>` : ""}
+      ${payment.tenantPhone ? `<br><span style="color:var(--muted);font-size:12px">جوال: ${escapeAttr(payment.tenantPhone)}</span>` : ""}
+      ${payment.guarantorName ? `<br><span style="color:var(--muted);font-size:12px">كفيل: ${escapeAttr(payment.guarantorName)}${payment.guarantorPhone ? " - " + escapeAttr(payment.guarantorPhone) : ""}</span>` : ""}
     </td>
     <td data-label="الإيجار"><input type="number" data-field="rentDue" value="${payment.rentDue ?? 0}" min="0" /></td>
     <td data-label="كاش"><input type="number" data-field="cashAmount" value="${payment.cashAmount ?? 0}" min="0" /></td>
@@ -331,8 +331,9 @@ async function renderTenancyHistory(unitId) {
         <div class="history-row">
           <span class="month">${t.moveInDate || "—"} ← ${t.moveOutDate || "حتى الآن"}</span>
           <span class="tenant">${escapeAttr(t.tenantName || "—")}</span>
-          <span>${t.tenantIdNumber ? `الهوية: ${escapeAttr(t.tenantIdNumber)}` : ""}</span>
+          <span>${t.tenantPhone ? `جوال المستأجر: ${escapeAttr(t.tenantPhone)}` : ""}</span>
           <span>${t.guarantorName ? `الكفيل: ${escapeAttr(t.guarantorName)}` : ""}</span>
+          <span>${t.guarantorPhone ? `جوال الكفيل: ${escapeAttr(t.guarantorPhone)}` : ""}</span>
           <span>الإيجار: ${t.rentAmount ?? 0}</span>
         </div>
       `
@@ -395,6 +396,10 @@ async function loadUnitsAdminTab() {
   }
 }
 
+function field(label, inputHtml) {
+  return `<span class="tfield-group"><span class="tfield-label">${label}</span>${inputHtml}</span>`;
+}
+
 async function buildUnitAdminRow(unit) {
   const wrapper = document.createElement("div");
 
@@ -402,7 +407,7 @@ async function buildUnitAdminRow(unit) {
   row.className = "unit-admin-row";
   row.dataset.unitId = unit.id;
   row.innerHTML = `
-    <input type="text" data-field="label" value="${escapeAttr(unit.label)}" />
+    <span>${escapeAttr(unit.label)}</span>
     <span style="color:var(--muted)">${escapeAttr(unit.type)}</span>
     <input type="number" data-field="rentAmount" value="${unit.rentAmount ?? 0}" min="0" />
     <label style="display:flex;align-items:center;gap:6px;font-size:13px;">
@@ -426,12 +431,13 @@ async function buildUnitAdminRow(unit) {
 
   if (tenancy) {
     tenancyBlock.innerHTML = `
-      <input type="text" placeholder="اسم المستأجر" data-tfield="tenantName" value="${escapeAttr(tenancy.tenantName || "")}" />
-      <input type="text" placeholder="رقم الهوية" data-tfield="tenantIdNumber" value="${escapeAttr(tenancy.tenantIdNumber || "")}" />
-      <input type="text" placeholder="اسم الكفيل" data-tfield="guarantorName" value="${escapeAttr(tenancy.guarantorName || "")}" />
-      <input type="text" placeholder="رقم الكفيل" data-tfield="guarantorIdNumber" value="${escapeAttr(tenancy.guarantorIdNumber || "")}" />
-      <span style="font-size:12px;color:var(--muted)">من ${tenancy.moveInDate || "—"}</span>
-      <input type="date" data-role="move-out-date" value="${todayStr()}" />
+      ${field("اسم المستأجر", `<input type="text" data-tfield="tenantName" value="${escapeAttr(tenancy.tenantName || "")}" />`)}
+      ${field("جوال المستأجر", `<input type="text" data-tfield="tenantPhone" value="${escapeAttr(tenancy.tenantPhone || "")}" />`)}
+      ${field("اسم الكفيل", `<input type="text" data-tfield="guarantorName" value="${escapeAttr(tenancy.guarantorName || "")}" />`)}
+      ${field("رقم هوية الكفيل", `<input type="text" data-tfield="guarantorIdNumber" value="${escapeAttr(tenancy.guarantorIdNumber || "")}" />`)}
+      ${field("جوال الكفيل", `<input type="text" data-tfield="guarantorPhone" value="${escapeAttr(tenancy.guarantorPhone || "")}" />`)}
+      ${field("تاريخ التأجير (بداية السكن)", `<span style="font-size:13px">${tenancy.moveInDate || "—"}</span>`)}
+      ${field("تاريخ الخروج (عند الإنهاء)", `<input type="date" data-role="move-out-date" value="${todayStr()}" />`)}
       <button type="button" data-role="end-tenancy-btn">تسجيل الخروج</button>
     `;
     tenancyBlock.addEventListener("change", async (e) => {
@@ -446,13 +452,14 @@ async function buildUnitAdminRow(unit) {
     });
   } else {
     tenancyBlock.innerHTML = `
-      <span style="font-size:13px;color:var(--muted)">شاغرة</span>
-      <input type="text" placeholder="اسم المستأجر" data-nt="tenantName" />
-      <input type="text" placeholder="رقم الهوية" data-nt="tenantIdNumber" />
-      <input type="text" placeholder="اسم الكفيل" data-nt="guarantorName" />
-      <input type="text" placeholder="رقم الكفيل" data-nt="guarantorIdNumber" />
-      <input type="date" data-nt="moveInDate" value="${todayStr()}" />
-      <input type="number" placeholder="الإيجار" data-nt="rentAmount" value="${unit.rentAmount ?? 0}" min="0" />
+      <span style="font-size:13px;color:var(--muted);flex-basis:100%">شاغرة — لا يوجد مستأجر حاليًا</span>
+      ${field("اسم المستأجر", `<input type="text" data-nt="tenantName" />`)}
+      ${field("جوال المستأجر", `<input type="text" data-nt="tenantPhone" />`)}
+      ${field("اسم الكفيل", `<input type="text" data-nt="guarantorName" />`)}
+      ${field("رقم هوية الكفيل", `<input type="text" data-nt="guarantorIdNumber" />`)}
+      ${field("جوال الكفيل", `<input type="text" data-nt="guarantorPhone" />`)}
+      ${field("تاريخ التأجير (بداية السكن)", `<input type="date" data-nt="moveInDate" value="${todayStr()}" />`)}
+      ${field("الإيجار الشهري", `<input type="number" data-nt="rentAmount" value="${unit.rentAmount ?? 0}" min="0" />`)}
       <button type="button" data-role="start-tenancy-btn">تسجيل مستأجر جديد</button>
     `;
     tenancyBlock.querySelector('[data-role="start-tenancy-btn"]').addEventListener("click", async () => {
@@ -463,9 +470,10 @@ async function buildUnitAdminRow(unit) {
         unitId: unit.id,
         buildingId: unit.buildingId,
         tenantName,
-        tenantIdNumber: get("tenantIdNumber"),
+        tenantPhone: get("tenantPhone"),
         guarantorName: get("guarantorName"),
         guarantorIdNumber: get("guarantorIdNumber"),
+        guarantorPhone: get("guarantorPhone"),
         moveInDate: get("moveInDate") || todayStr(),
         rentAmount: Number(get("rentAmount")) || 0,
       });
