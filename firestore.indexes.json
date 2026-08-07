@@ -15,6 +15,22 @@
         { "fieldPath": "unitId", "order": "ASCENDING" },
         { "fieldPath": "ym", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "tenancies",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "unitId", "order": "ASCENDING" },
+        { "fieldPath": "active", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tenancies",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "unitId", "order": "ASCENDING" },
+        { "fieldPath": "moveInDate", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

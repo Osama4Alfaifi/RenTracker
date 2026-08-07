@@ -10,6 +10,8 @@
   --paid-bg: #e7f7ee;
   --unpaid: #d1443e;
   --unpaid-bg: #fbeaea;
+  --partial: #b8790f;
+  --partial-bg: #fdf1e0;
   --radius: 10px;
 }
 
@@ -297,6 +299,11 @@ button {
   color: var(--unpaid);
 }
 
+.status-toggle.partial {
+  background: var(--partial-bg);
+  color: var(--partial);
+}
+
 .method-field,
 .date-field {
   display: none;
@@ -391,6 +398,40 @@ button {
   border: 1px solid var(--border);
   border-radius: 6px;
   font-family: inherit;
+}
+
+.tenancy-block {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 0 14px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+.tenancy-block input {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 13px;
+  min-width: 110px;
+  flex: 1 1 110px;
+}
+
+.tenancy-block button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background: var(--primary);
+  color: white;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.tenancy-block button:hover {
+  background: var(--primary-dark);
 }
 
 @media (max-width: 720px) {

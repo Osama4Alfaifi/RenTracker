@@ -17,6 +17,7 @@ import { db } from "./firebase-init.js";
 const BUILDINGS = "buildings";
 const UNITS = "units";
 const PAYMENTS = "payments";
+const TENANCIES = "tenancies";
 
 function paymentId(unitId, year, month) {
   return `${unitId}_${year}-${month}`;
@@ -28,6 +29,19 @@ function toYm(year, month) {
 
 function prevMonth(year, month) {
   return month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 };
+}
+
+// Derives paid/partial/unpaid and the remaining balance from amounts actually
+// paid, instead of relying on a manually-clicked toggle.
+export function computeStatus(rentDue, cashAmount, transferAmount) {
+  const due = Number(rentDue) || 0;
+  const paid = (Number(cashAmount) || 0) + (Number(transferAmount) || 0);
+  const outstanding = Math.max(0, due - paid);
+  let status;
+  if (due > 0 && outstanding === 0) status = "paid";
+  else if (paid > 0) status = "partial";
+  else status = "unpaid";
+  return { status, outstanding };
 }
 
 export async function getBuildings() {
@@ -47,9 +61,38 @@ export async function getPayment(unitId, year, month) {
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
 
+export async function getActiveTenancy(unitId) {
+  const snap = await getDocs(
+    query(collection(db, TENANCIES), where("unitId", "==", unitId), where("active", "==", true))
+  );
+  if (snap.empty) return null;
+  const d = snap.docs[0];
+  return { id: d.id, ...d.data() };
+}
+
+export async function getTenancyHistory(unitId) {
+  const snap = await getDocs(
+    query(collection(db, TENANCIES), where("unitId", "==", unitId), orderBy("moveInDate", "desc"))
+  );
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+export async function startTenancy(data) {
+  return addDoc(collection(db, TENANCIES), { ...data, moveOutDate: null, active: true });
+}
+
+export async function updateTenancy(tenancyId, changes) {
+  return updateDoc(doc(db, TENANCIES, tenancyId), changes);
+}
+
+export async function endTenancy(tenancyId, moveOutDate) {
+  return updateDoc(doc(db, TENANCIES, tenancyId), { moveOutDate, active: false });
+}
+
 // Returns one row per unit for the given month, filling in sensible
-// defaults (previous month's tenant name, unit's current rent) when no
-// payment record exists yet for that unit/month.
+// defaults (active tenancy's info, unit's current rent, and last month's
+// unpaid balance carried forward) when no payment record exists yet for
+// that unit/month.
 export async function getMonthRows(units, year, month) {
   const { year: py, month: pm } = prevMonth(year, month);
   const rows = [];
@@ -60,6 +103,12 @@ export async function getMonthRows(units, year, month) {
       continue;
     }
     const previous = await getPayment(unit.id, py, pm);
+    const previousOutstanding = previous
+      ? computeStatus(previous.rentDue, previous.cashAmount, previous.transferAmount).outstanding
+      : 0;
+    const tenancy = await getActiveTenancy(unit.id);
+    const baseRent = tenancy?.rentAmount ?? unit.rentAmount ?? 0;
+
     rows.push({
       unit,
       payment: {
@@ -69,10 +118,17 @@ export async function getMonthRows(units, year, month) {
         year,
         month,
         ym: toYm(year, month),
-        tenantName: previous ? previous.tenantName : "",
-        rentDue: unit.rentAmount ?? 0,
+        tenancyId: tenancy?.id || null,
+        tenantName: tenancy?.tenantName || "",
+        tenantIdNumber: tenancy?.tenantIdNumber || "",
+        guarantorName: tenancy?.guarantorName || "",
+        guarantorIdNumber: tenancy?.guarantorIdNumber || "",
+        rentDue: baseRent + previousOutstanding,
+        cashAmount: 0,
+        transferAmount: 0,
+        transferMethod: null,
         status: "unpaid",
-        method: null,
+        outstanding: baseRent + previousOutstanding,
         paidDate: null,
         notes: "",
       },
@@ -84,9 +140,10 @@ export async function getMonthRows(units, year, month) {
 
 export async function savePayment(payment) {
   const id = paymentId(payment.unitId, payment.year, payment.month);
+  const { status, outstanding } = computeStatus(payment.rentDue, payment.cashAmount, payment.transferAmount);
   await setDoc(
     doc(db, PAYMENTS, id),
-    { ...payment, ym: toYm(payment.year, payment.month), updatedAt: serverTimestamp() },
+    { ...payment, status, outstanding, ym: toYm(payment.year, payment.month), updatedAt: serverTimestamp() },
     { merge: true }
   );
   return id;
