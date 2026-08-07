@@ -42,7 +42,7 @@ loginForm.addEventListener("submit", async (e) => {
   try {
     await login(email, password);
   } catch (err) {
-    loginError.textContent = "تعذر تسجيل الدخول. تحقق من البريد وكلمة المرور.";
+    loginError.textContent = `تعذر تسجيل الدخول. تحقق من البريد وكلمة المرور. (${err.code || err.message})`;
     loginError.hidden = false;
   }
 });
