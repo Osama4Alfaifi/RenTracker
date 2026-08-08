@@ -13,6 +13,7 @@ import {
   getTenancyHistory,
   getBuildingHistory,
   getBuildingTenancyHistory,
+  getUnitsByTenantPhone,
   startTenancy,
   endTenancy,
   updateTenancy,
@@ -220,10 +221,23 @@ function whatsappLink(phone, message) {
   return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
 
-function reminderMessage(payment) {
-  const monthName = ARABIC_MONTHS[payment.month - 1];
-  const amountLine = payment.outstanding > 0 ? ` وقدره ${payment.outstanding.toLocaleString("ar")} ريال` : "";
-  return `السلام عليكم ورحمة الله وبركاته\nنذكركم بسداد إيجار شهر ${monthName} ${payment.year}${amountLine}.\nجزاكم الله خيرًا`;
+// Builds one reminder covering every unit this tenant rents (matched by
+// phone across all buildings), so someone with multiple rooms/shops gets
+// a single message listing all of them instead of one per unit.
+function combinedReminderMessage(matches, year, month) {
+  const monthName = ARABIC_MONTHS[month - 1];
+  const owed = matches.filter((m) => m.payment.status !== "paid" && m.payment.outstanding > 0);
+  const lines = owed.map(
+    (m) => `- ${m.unit.label} (${m.building.name}): ${Number(m.payment.outstanding).toLocaleString("ar")} ريال`
+  );
+  const total = owed.reduce((sum, m) => sum + (Number(m.payment.outstanding) || 0), 0);
+  return (
+    `السلام عليكم ورحمة الله وبركاته\n` +
+    `نذكركم بسداد إيجار شهر ${monthName} ${year} عن الوحدات التالية:\n` +
+    lines.join("\n") +
+    `\n\nالإجمالي المطلوب: ${total.toLocaleString("ar")} ريال\n` +
+    `جزاكم الله خيرًا`
+  );
 }
 
 function buildUnitRow(unit, payment) {
@@ -235,7 +249,7 @@ function buildUnitRow(unit, payment) {
     <td data-label="المستأجر">
       ${escapeAttr(payment.tenantName || "شاغرة")}
       ${payment.tenantPhone ? `<br><span style="color:var(--muted);font-size:12px">جوال: ${escapeAttr(payment.tenantPhone)}</span>` : ""}
-      ${payment.tenantPhone ? `<br><a data-role="whatsapp-btn" class="whatsapp-btn ${payment.status !== "paid" ? "visible" : ""}" target="_blank" rel="noopener" href="${whatsappLink(payment.tenantPhone, reminderMessage(payment))}">تذكير واتساب</a>` : ""}
+      ${payment.tenantPhone ? `<br><button type="button" data-role="whatsapp-btn" class="whatsapp-btn ${payment.status !== "paid" ? "visible" : ""}">تذكير واتساب</button>` : ""}
       ${payment.contractNumber ? `<br><span style="color:var(--muted);font-size:12px">عقد: ${escapeAttr(payment.contractNumber)}</span>` : ""}
       ${payment.guarantorName ? `<br><span style="color:var(--muted);font-size:12px">كفيل: ${escapeAttr(payment.guarantorName)}${payment.guarantorPhone ? " - " + escapeAttr(payment.guarantorPhone) : ""}</span>` : ""}
     </td>
@@ -290,12 +304,21 @@ buildingsContainer.addEventListener("change", (e) => {
   outstandingCell.style.color = outstanding > 0 ? "var(--unpaid)" : "var(--muted)";
 
   const waBtn = tr.querySelector('[data-role="whatsapp-btn"]');
-  if (waBtn) {
-    waBtn.classList.toggle("visible", status !== "paid");
-    waBtn.href = whatsappLink(payment.tenantPhone, reminderMessage(payment));
-  }
+  if (waBtn) waBtn.classList.toggle("visible", status !== "paid");
 
   saveRow(tr, payment);
+});
+
+buildingsContainer.addEventListener("click", async (e) => {
+  const btn = e.target.closest('[data-role="whatsapp-btn"]');
+  if (!btn) return;
+  const tr = btn.closest("tr");
+  const payment = state.rowsByUnitId.get(tr.dataset.unitId);
+  if (!payment?.tenantPhone) return;
+
+  const matches = await getUnitsByTenantPhone(payment.tenantPhone, state.year, state.month);
+  const message = combinedReminderMessage(matches, state.year, state.month);
+  window.open(whatsappLink(payment.tenantPhone, message), "_blank", "noopener");
 });
 
 async function saveRow(tr, payment) {
@@ -486,7 +509,7 @@ async function buildUnitAdminRow(unit) {
       ${field("رقم العقد", `<input type="text" data-tfield="contractNumber" value="${escapeAttr(tenancy.contractNumber || "")}" />`)}
       ${field("اسم الكفيل", `<input type="text" data-tfield="guarantorName" value="${escapeAttr(tenancy.guarantorName || "")}" />`)}
       ${field("جوال الكفيل", `<input type="text" data-tfield="guarantorPhone" value="${escapeAttr(tenancy.guarantorPhone || "")}" />`)}
-      ${field("تاريخ التأجير (بداية السكن)", `<span style="font-size:13px">${tenancy.moveInDate || "—"}</span>`)}
+      ${field("تاريخ التأجير (بداية السكن)", `<input type="date" data-tfield="moveInDate" value="${tenancy.moveInDate || ""}" />`)}
       ${field("تاريخ الخروج (عند الإنهاء)", `<input type="date" data-role="move-out-date" value="${todayStr()}" />`)}
       <button type="button" data-role="end-tenancy-btn">تسجيل الخروج</button>
     `;

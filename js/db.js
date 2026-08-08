@@ -146,6 +146,24 @@ export async function getMonthRows(units, year, month) {
   return rows;
 }
 
+// Finds every unit (across all buildings) whose tenant phone matches, for
+// the given month — including units not yet touched this month, so a
+// tenant renting several rooms/shops gets reminded about all of them.
+export async function getUnitsByTenantPhone(tenantPhone, year, month) {
+  const buildings = await getBuildings();
+  const matches = [];
+  for (const building of buildings) {
+    const units = await getUnits(building.id);
+    const rows = await getMonthRows(units, year, month);
+    for (const row of rows) {
+      if (row.payment.tenantPhone === tenantPhone) {
+        matches.push({ building, unit: row.unit, payment: row.payment });
+      }
+    }
+  }
+  return matches;
+}
+
 export async function savePayment(payment) {
   const id = paymentId(payment.unitId, payment.year, payment.month);
   const { status, outstanding } = computeStatus(payment.rentDue, payment.cashAmount, payment.transferAmount);
