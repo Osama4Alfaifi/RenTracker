@@ -484,6 +484,26 @@ button:active {
   animation: fade-in 0.2s ease-out;
 }
 
+.whatsapp-btn {
+  display: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  background: #25d366;
+  padding: 3px 10px;
+  border-radius: 999px;
+  text-decoration: none;
+}
+
+.whatsapp-btn.visible {
+  display: inline-block;
+  animation: fade-in 0.2s ease-out;
+}
+
+.whatsapp-btn:hover {
+  background: #1ebc59;
+}
+
 .save-indicator {
   font-size: 12px;
   font-weight: 600;

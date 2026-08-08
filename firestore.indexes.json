@@ -31,6 +31,22 @@
         { "fieldPath": "unitId", "order": "ASCENDING" },
         { "fieldPath": "moveInDate", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "buildingId", "order": "ASCENDING" },
+        { "fieldPath": "ym", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tenancies",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "buildingId", "order": "ASCENDING" },
+        { "fieldPath": "moveInDate", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

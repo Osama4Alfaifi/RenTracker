@@ -77,6 +77,13 @@ export async function getTenancyHistory(unitId) {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
+export async function getBuildingTenancyHistory(buildingId) {
+  const snap = await getDocs(
+    query(collection(db, TENANCIES), where("buildingId", "==", buildingId), orderBy("moveInDate", "desc"))
+  );
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
 export async function startTenancy(data) {
   return addDoc(collection(db, TENANCIES), { ...data, moveOutDate: null, active: true });
 }
@@ -153,6 +160,13 @@ export async function savePayment(payment) {
 export async function getUnitHistory(unitId) {
   const snap = await getDocs(
     query(collection(db, PAYMENTS), where("unitId", "==", unitId), orderBy("ym", "desc"))
+  );
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+export async function getBuildingHistory(buildingId) {
+  const snap = await getDocs(
+    query(collection(db, PAYMENTS), where("buildingId", "==", buildingId), orderBy("ym", "desc"))
   );
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }

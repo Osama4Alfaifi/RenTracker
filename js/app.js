@@ -11,6 +11,8 @@ import {
   hasAnyBuildings,
   getActiveTenancy,
   getTenancyHistory,
+  getBuildingHistory,
+  getBuildingTenancyHistory,
   startTenancy,
   endTenancy,
   updateTenancy,
@@ -211,6 +213,19 @@ function renderSummaryBar() {
   `;
 }
 
+function whatsappLink(phone, message) {
+  let digits = String(phone).replace(/[^\d]/g, "");
+  if (digits.startsWith("0")) digits = "966" + digits.slice(1);
+  else if (!digits.startsWith("966")) digits = "966" + digits;
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
+}
+
+function reminderMessage(payment) {
+  const monthName = ARABIC_MONTHS[payment.month - 1];
+  const amountLine = payment.outstanding > 0 ? ` وقدره ${payment.outstanding.toLocaleString("ar")} ريال` : "";
+  return `السلام عليكم ورحمة الله وبركاته\nنذكركم بسداد إيجار شهر ${monthName} ${payment.year}${amountLine}.\nجزاكم الله خيرًا`;
+}
+
 function buildUnitRow(unit, payment) {
   const tr = document.createElement("tr");
   tr.dataset.unitId = unit.id;
@@ -220,6 +235,7 @@ function buildUnitRow(unit, payment) {
     <td data-label="المستأجر">
       ${escapeAttr(payment.tenantName || "شاغرة")}
       ${payment.tenantPhone ? `<br><span style="color:var(--muted);font-size:12px">جوال: ${escapeAttr(payment.tenantPhone)}</span>` : ""}
+      ${payment.tenantPhone ? `<br><a data-role="whatsapp-btn" class="whatsapp-btn ${payment.status !== "paid" ? "visible" : ""}" target="_blank" rel="noopener" href="${whatsappLink(payment.tenantPhone, reminderMessage(payment))}">تذكير واتساب</a>` : ""}
       ${payment.contractNumber ? `<br><span style="color:var(--muted);font-size:12px">عقد: ${escapeAttr(payment.contractNumber)}</span>` : ""}
       ${payment.guarantorName ? `<br><span style="color:var(--muted);font-size:12px">كفيل: ${escapeAttr(payment.guarantorName)}${payment.guarantorPhone ? " - " + escapeAttr(payment.guarantorPhone) : ""}</span>` : ""}
     </td>
@@ -273,6 +289,12 @@ buildingsContainer.addEventListener("change", (e) => {
   outstandingCell.textContent = outstanding.toLocaleString("ar");
   outstandingCell.style.color = outstanding > 0 ? "var(--unpaid)" : "var(--muted)";
 
+  const waBtn = tr.querySelector('[data-role="whatsapp-btn"]');
+  if (waBtn) {
+    waBtn.classList.toggle("visible", status !== "paid");
+    waBtn.href = whatsappLink(payment.tenantPhone, reminderMessage(payment));
+  }
+
   saveRow(tr, payment);
 });
 
@@ -295,6 +317,8 @@ const historyUnitSelect = document.getElementById("history-unit-select");
 const historyResults = document.getElementById("history-results");
 const historyTenancyResults = document.getElementById("history-tenancy-results");
 
+let historyUnitsById = new Map();
+
 async function loadHistoryTab() {
   if (!state.buildings.length) state.buildings = await getBuildings();
   historyBuildingSelect.innerHTML = state.buildings
@@ -305,34 +329,36 @@ async function loadHistoryTab() {
 
 historyBuildingSelect.addEventListener("change", (e) => loadHistoryUnits(e.target.value));
 historyUnitSelect.addEventListener("change", (e) => {
-  renderHistory(e.target.value);
-  renderTenancyHistory(e.target.value);
+  const buildingId = historyBuildingSelect.value;
+  renderHistory(e.target.value, buildingId);
+  renderTenancyHistory(e.target.value, buildingId);
 });
 
 async function loadHistoryUnits(buildingId) {
   const units = await getUnits(buildingId);
-  historyUnitSelect.innerHTML = units.map((u) => `<option value="${u.id}">${u.label} (${u.type})</option>`).join("");
-  if (units.length) {
-    await renderHistory(units[0].id);
-    await renderTenancyHistory(units[0].id);
-  } else {
-    historyResults.innerHTML = "";
-    historyTenancyResults.innerHTML = "";
-  }
+  historyUnitsById = new Map(units.map((u) => [u.id, u]));
+  historyUnitSelect.innerHTML =
+    `<option value="">كل الوحدات (المجمع كاملًا)</option>` +
+    units.map((u) => `<option value="${u.id}">${u.label} (${u.type})</option>`).join("");
+  historyUnitSelect.value = "";
+  await renderHistory("", buildingId);
+  await renderTenancyHistory("", buildingId);
 }
 
-async function renderHistory(unitId) {
-  const records = await getUnitHistory(unitId);
+async function renderHistory(unitId, buildingId) {
+  const records = unitId ? await getUnitHistory(unitId) : await getBuildingHistory(buildingId);
   if (!records.length) {
-    historyResults.innerHTML = `<p style="color:var(--muted)">لا يوجد سجل مدفوعات لهذه الوحدة بعد.</p>`;
+    historyResults.innerHTML = `<p style="color:var(--muted)">لا يوجد سجل مدفوعات بعد.</p>`;
     return;
   }
   historyResults.innerHTML = records
     .map((r) => {
       const transferLabel = r.transferAmount > 0 ? TRANSFER_METHOD_LABELS[r.transferMethod] || "تحويل" : null;
+      const unitLabel = historyUnitsById.get(r.unitId)?.label;
       return `
         <div class="history-row">
           <span class="month">${ARABIC_MONTHS[r.month - 1]} ${r.year}</span>
+          ${!unitId && unitLabel ? `<span class="tenant">${escapeAttr(unitLabel)}</span>` : ""}
           <span class="tenant">${r.tenantName || "—"}</span>
           <span class="status-toggle ${r.status}">${STATUS_LABELS[r.status] || r.status}</span>
           <span>الإيجار: ${r.rentDue ?? 0}</span>
@@ -347,17 +373,19 @@ async function renderHistory(unitId) {
     .join("");
 }
 
-async function renderTenancyHistory(unitId) {
-  const tenancies = await getTenancyHistory(unitId);
+async function renderTenancyHistory(unitId, buildingId) {
+  const tenancies = unitId ? await getTenancyHistory(unitId) : await getBuildingTenancyHistory(buildingId);
   if (!tenancies.length) {
-    historyTenancyResults.innerHTML = `<p style="color:var(--muted)">لا يوجد سجل مستأجرين لهذه الوحدة بعد.</p>`;
+    historyTenancyResults.innerHTML = `<p style="color:var(--muted)">لا يوجد سجل مستأجرين بعد.</p>`;
     return;
   }
   historyTenancyResults.innerHTML = tenancies
-    .map(
-      (t) => `
+    .map((t) => {
+      const unitLabel = historyUnitsById.get(t.unitId)?.label;
+      return `
         <div class="history-row">
           <span class="month">${t.moveInDate || "—"} ← ${t.moveOutDate || "حتى الآن"}</span>
+          ${!unitId && unitLabel ? `<span class="tenant">${escapeAttr(unitLabel)}</span>` : ""}
           <span class="tenant">${escapeAttr(t.tenantName || "—")}</span>
           <span>${t.tenantPhone ? `جوال المستأجر: ${escapeAttr(t.tenantPhone)}` : ""}</span>
           <span>${t.contractNumber ? `رقم العقد: ${escapeAttr(t.contractNumber)}` : ""}</span>
@@ -365,8 +393,8 @@ async function renderTenancyHistory(unitId) {
           <span>${t.guarantorPhone ? `جوال الكفيل: ${escapeAttr(t.guarantorPhone)}` : ""}</span>
           <span>الإيجار: ${t.rentAmount ?? 0}</span>
         </div>
-      `
-    )
+      `;
+    })
     .join("");
 }
 
