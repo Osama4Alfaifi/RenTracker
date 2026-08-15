@@ -149,20 +149,27 @@ async function initDashboard() {
   await renderDashboard();
 }
 
+let dashboardRenderToken = 0;
+
 async function renderDashboard() {
+  const token = ++dashboardRenderToken;
   monthLabel.textContent = `${ARABIC_MONTHS[state.month - 1]} ${state.year}`;
   renderBuildingSubTabs(dashboardBuildingTabs, renderDashboard);
-  state.rowsByUnitId.clear();
-  buildingsContainer.innerHTML = "";
 
   const building = state.buildings.find((b) => b.id === state.selectedBuildingId);
   if (!building) {
+    state.rowsByUnitId.clear();
+    buildingsContainer.innerHTML = "";
     renderSummaryBar();
     return;
   }
 
   const units = await getUnits(building.id);
   const rows = await getMonthRows(units, state.year, state.month);
+  if (token !== dashboardRenderToken) return; // a newer render started meanwhile; discard this one
+
+  state.rowsByUnitId.clear();
+  buildingsContainer.innerHTML = "";
 
   const section = document.createElement("div");
   section.className = "building-section";
@@ -426,13 +433,18 @@ async function renderTenancyHistory(unitId, buildingId) {
 const unitsAdminContainer = document.getElementById("units-admin-container");
 const unitsBuildingTabs = document.getElementById("units-building-tabs");
 
+let unitsAdminRenderToken = 0;
+
 async function loadUnitsAdminTab() {
+  const token = ++unitsAdminRenderToken;
   if (!state.buildings.length) state.buildings = await getBuildings();
   renderBuildingSubTabs(unitsBuildingTabs, loadUnitsAdminTab);
-  unitsAdminContainer.innerHTML = "";
 
   const building = state.buildings.find((b) => b.id === state.selectedBuildingId);
-  if (!building) return;
+  if (!building) {
+    unitsAdminContainer.innerHTML = "";
+    return;
+  }
 
   const units = await getUnits(building.id);
   const section = document.createElement("div");
@@ -454,6 +466,8 @@ async function loadUnitsAdminTab() {
   for (const unit of units) {
     rowsContainer.appendChild(await buildUnitAdminRow(unit));
   }
+  if (token !== unitsAdminRenderToken) return; // a newer render started meanwhile; discard this one
+  unitsAdminContainer.innerHTML = "";
 
   section.querySelector('[data-role="add-unit-btn"]').addEventListener("click", async () => {
     const labelInput = section.querySelector('[data-new="label"]');

@@ -106,6 +106,35 @@ export async function getMonthRows(units, year, month) {
   for (const unit of units) {
     const existing = await getPayment(unit.id, year, month);
     if (existing) {
+      // A blank record (no tenant recorded, nothing paid) can predate a
+      // tenancy that started afterward — e.g. the row got auto-saved while
+      // the unit was still vacant. Refresh its tenant snapshot from
+      // whoever is active now instead of showing it stuck empty forever.
+      const isBlank = !existing.tenantName && !existing.cashAmount && !existing.transferAmount;
+      if (isBlank) {
+        const tenancy = await getActiveTenancy(unit.id);
+        if (tenancy && tenancy.id !== existing.tenancyId) {
+          const rentDue = tenancy.rentAmount ?? existing.rentDue ?? 0;
+          const { status, outstanding } = computeStatus(rentDue, existing.cashAmount, existing.transferAmount);
+          rows.push({
+            unit,
+            payment: {
+              ...existing,
+              tenancyId: tenancy.id,
+              tenantName: tenancy.tenantName || "",
+              tenantPhone: tenancy.tenantPhone || "",
+              contractNumber: tenancy.contractNumber || "",
+              guarantorName: tenancy.guarantorName || "",
+              guarantorPhone: tenancy.guarantorPhone || "",
+              rentDue,
+              status,
+              outstanding,
+            },
+            isNew: false,
+          });
+          continue;
+        }
+      }
       rows.push({ unit, payment: existing, isNew: false });
       continue;
     }
