@@ -234,17 +234,19 @@ function whatsappLink(phone, message) {
 
 // Builds one reminder covering every unit this tenant rents (matched by
 // phone across all buildings), so someone with multiple rooms/shops gets
-// a single message listing all of them instead of one per unit.
+// a single message listing all of them instead of one per unit. Each
+// unit's amount is its full accumulated arrears (this month plus any
+// unpaid past months), not just the current month's balance.
 function combinedReminderMessage(matches, year, month) {
   const monthName = ARABIC_MONTHS[month - 1];
-  const owed = matches.filter((m) => m.payment.status !== "paid" && m.payment.outstanding > 0);
+  const owed = matches.filter((m) => m.payment.outstanding > 0);
   const lines = owed.map(
     (m) => `- ${m.unit.label} (${m.building.name}): ${Number(m.payment.outstanding).toLocaleString("ar")} ريال`
   );
   const total = owed.reduce((sum, m) => sum + (Number(m.payment.outstanding) || 0), 0);
   return (
     `السلام عليكم ورحمة الله وبركاته\n` +
-    `نذكركم بسداد إيجار شهر ${monthName} ${year} عن الوحدات التالية:\n` +
+    `نذكركم بسداد المستحق حتى شهر ${monthName} ${year} (شامل أي متأخرات سابقة) عن الوحدات التالية:\n` +
     lines.join("\n") +
     `\n\nالإجمالي المطلوب: ${total.toLocaleString("ar")} ريال\n` +
     `جزاكم الله خيرًا`

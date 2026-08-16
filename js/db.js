@@ -175,9 +175,40 @@ export async function getMonthRows(units, year, month) {
   return rows;
 }
 
+// Sums this tenancy's true shortfall month by month (flat rent per month
+// minus whatever was actually recorded that month, floored at 0) from
+// move-in through the given month. Independent of the single-step
+// rentDue carry-forward in getMonthRows, which only sees one month back
+// and silently loses arrears from any month that was never opened/saved.
+async function getAccumulatedArrears(unitId, tenancy, uptoYear, uptoMonth) {
+  if (!tenancy?.moveInDate) return 0;
+  const [startYear, startMonth] = tenancy.moveInDate.split("-").map(Number);
+  if (!startYear || !startMonth) return 0;
+
+  const monthlyRent = Number(tenancy.rentAmount) || 0;
+  let total = 0;
+  let y = startYear;
+  let m = startMonth;
+  let guard = 0;
+  while ((y < uptoYear || (y === uptoYear && m <= uptoMonth)) && guard < 600) {
+    const rec = await getPayment(unitId, y, m);
+    const paid = rec ? (Number(rec.cashAmount) || 0) + (Number(rec.transferAmount) || 0) : 0;
+    total += Math.max(0, monthlyRent - paid);
+    m += 1;
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
+    guard += 1;
+  }
+  return total;
+}
+
 // Finds every unit (across all buildings) whose tenant phone matches, for
 // the given month — including units not yet touched this month, so a
 // tenant renting several rooms/shops gets reminded about all of them.
+// Each match's payment.outstanding is replaced with the full accumulated
+// arrears across their whole tenancy, not just this one month.
 export async function getUnitsByTenantPhone(tenantPhone, year, month) {
   const buildings = await getBuildings();
   const matches = [];
@@ -186,7 +217,9 @@ export async function getUnitsByTenantPhone(tenantPhone, year, month) {
     const rows = await getMonthRows(units, year, month);
     for (const row of rows) {
       if (row.payment.tenantPhone === tenantPhone) {
-        matches.push({ building, unit: row.unit, payment: row.payment });
+        const tenancy = await getActiveTenancy(row.unit.id);
+        const totalArrears = await getAccumulatedArrears(row.unit.id, tenancy, year, month);
+        matches.push({ building, unit: row.unit, payment: { ...row.payment, outstanding: totalArrears } });
       }
     }
   }
