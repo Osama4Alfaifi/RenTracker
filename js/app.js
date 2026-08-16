@@ -19,6 +19,7 @@ import {
   updateTenancy,
   computeStatus,
 } from "./db.js";
+import { downloadReceiptPdf } from "./receipt.js";
 
 const ARABIC_MONTHS = [
   "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
@@ -35,6 +36,7 @@ const state = {
   buildings: [],
   selectedBuildingId: null,
   rowsByUnitId: new Map(), // unitId -> payment object currently shown
+  unitsById: new Map(), // unitId -> unit object currently shown
 };
 
 // Renders building-picker pill buttons into `container`, defaulting to the
@@ -169,6 +171,7 @@ async function renderDashboard() {
   if (token !== dashboardRenderToken) return; // a newer render started meanwhile; discard this one
 
   state.rowsByUnitId.clear();
+  state.unitsById.clear();
   buildingsContainer.innerHTML = "";
 
   const section = document.createElement("div");
@@ -189,6 +192,7 @@ async function renderDashboard() {
 
   for (const row of rows) {
     state.rowsByUnitId.set(row.unit.id, row.payment);
+    state.unitsById.set(row.unit.id, row.unit);
     tbody.appendChild(buildUnitRow(row.unit, row.payment));
   }
 
@@ -276,7 +280,10 @@ function buildUnitRow(unit, payment) {
       <input type="date" data-field="paidDate" class="date-field ${payment.status !== "unpaid" ? "visible" : ""}" value="${payment.paidDate || ""}" />
     </td>
     <td data-label="ملاحظات"><input type="text" data-field="notes" value="${escapeAttr(payment.notes || "")}" /></td>
-    <td data-label=""><span class="save-indicator" data-role="save-indicator">✓ حُفظ</span></td>
+    <td data-label="">
+      <button type="button" data-role="receipt-btn" class="receipt-btn ${payment.status !== "unpaid" ? "visible" : ""}">🖨 سند قبض</button>
+      <span class="save-indicator" data-role="save-indicator">✓ حُفظ</span>
+    </td>
   `;
   return tr;
 }
@@ -312,20 +319,57 @@ buildingsContainer.addEventListener("change", (e) => {
 
   const waBtn = tr.querySelector('[data-role="whatsapp-btn"]');
   if (waBtn) waBtn.classList.toggle("visible", status !== "paid");
+  const receiptBtn = tr.querySelector('[data-role="receipt-btn"]');
+  if (receiptBtn) receiptBtn.classList.toggle("visible", status !== "unpaid");
 
   saveRow(tr, payment);
 });
 
 buildingsContainer.addEventListener("click", async (e) => {
-  const btn = e.target.closest('[data-role="whatsapp-btn"]');
-  if (!btn) return;
-  const tr = btn.closest("tr");
-  const payment = state.rowsByUnitId.get(tr.dataset.unitId);
-  if (!payment?.tenantPhone) return;
+  const waBtn = e.target.closest('[data-role="whatsapp-btn"]');
+  if (waBtn) {
+    const tr = waBtn.closest("tr");
+    const payment = state.rowsByUnitId.get(tr.dataset.unitId);
+    if (!payment?.tenantPhone) return;
+    const matches = await getUnitsByTenantPhone(payment.tenantPhone, state.year, state.month);
+    const message = combinedReminderMessage(matches, state.year, state.month);
+    window.open(whatsappLink(payment.tenantPhone, message), "_blank", "noopener");
+    return;
+  }
 
-  const matches = await getUnitsByTenantPhone(payment.tenantPhone, state.year, state.month);
-  const message = combinedReminderMessage(matches, state.year, state.month);
-  window.open(whatsappLink(payment.tenantPhone, message), "_blank", "noopener");
+  const receiptBtn = e.target.closest('[data-role="receipt-btn"]');
+  if (receiptBtn) {
+    const tr = receiptBtn.closest("tr");
+    const unitId = tr.dataset.unitId;
+    const payment = state.rowsByUnitId.get(unitId);
+    const unit = state.unitsById.get(unitId);
+    if (!payment || !unit) return;
+    const building = state.buildings.find((b) => b.id === payment.buildingId);
+    const amount = (Number(payment.cashAmount) || 0) + (Number(payment.transferAmount) || 0);
+    const hasCash = Number(payment.cashAmount) > 0;
+    const hasTransfer = Number(payment.transferAmount) > 0;
+    const methodText = hasCash && hasTransfer ? "كاش وتحويل" : hasCash ? "كاش" : "تحويل";
+
+    const receivedFrom = window.prompt("استلمت من (اسم المستلم):", payment.tenantName || "");
+    if (!receivedFrom) return;
+
+    receiptBtn.disabled = true;
+    try {
+      await downloadReceiptPdf({
+        receivedFrom,
+        amount,
+        methodText,
+        unitLabel: unit.label,
+        buildingName: building?.name || "",
+        monthNum: payment.month,
+        monthName: ARABIC_MONTHS[payment.month - 1],
+        year: payment.year,
+        dateStr: payment.paidDate || todayStr(),
+      });
+    } finally {
+      receiptBtn.disabled = false;
+    }
+  }
 });
 
 async function saveRow(tr, payment) {

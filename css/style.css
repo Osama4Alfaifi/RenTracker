@@ -504,6 +504,33 @@ button:active {
   background: #1ebc59;
 }
 
+.receipt-btn {
+  display: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+  background: var(--primary);
+  border: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.receipt-btn.visible {
+  display: inline-block;
+  animation: fade-in 0.2s ease-out;
+}
+
+.receipt-btn:hover {
+  background: var(--primary-dark);
+}
+
+.receipt-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 .save-indicator {
   font-size: 12px;
   font-weight: 600;
