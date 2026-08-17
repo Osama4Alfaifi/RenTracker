@@ -178,15 +178,17 @@ async function renderDashboard() {
   section.className = "building-section";
   section.innerHTML = `
     <h2>${building.name}</h2>
-    <table class="unit-table">
-      <thead>
-        <tr>
-          <th>الوحدة</th><th>المستأجر</th><th>الإيجار</th><th>كاش</th><th>تحويل</th>
-          <th>نوع التحويل</th><th>المتأخر</th><th>الحالة</th><th>تاريخ الدفع</th><th>ملاحظات</th><th></th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="table-scroll">
+      <table class="unit-table">
+        <thead>
+          <tr>
+            <th>الوحدة</th><th>المستأجر</th><th>الإيجار</th><th>كاش</th><th>تحويل</th>
+            <th>نوع التحويل</th><th>المتأخر</th><th>الحالة</th><th>تاريخ الدفع</th><th>ملاحظات</th><th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   `;
   const tbody = section.querySelector("tbody");
 
@@ -277,15 +279,15 @@ function buildUnitRow(unit, payment) {
       </select>
     </td>
     <td data-label="المتأخر" data-role="outstanding" style="color:${payment.outstanding > 0 ? "var(--unpaid)" : "var(--muted)"}">${(payment.outstanding ?? 0).toLocaleString("ar")}</td>
-    <td data-label="الحالة"><span class="status-toggle ${payment.status}" data-role="status-badge">${STATUS_LABELS[payment.status]}</span></td>
+    <td data-label="الحالة">
+      <span class="status-toggle ${payment.status}" data-role="status-badge">${STATUS_LABELS[payment.status]}</span>
+      <br><button type="button" data-role="receipt-btn" class="receipt-btn ${payment.status !== "unpaid" ? "visible" : ""}">🖨 سند قبض</button>
+    </td>
     <td data-label="تاريخ الدفع">
       <input type="date" data-field="paidDate" class="date-field ${payment.status !== "unpaid" ? "visible" : ""}" value="${payment.paidDate || ""}" />
     </td>
     <td data-label="ملاحظات"><input type="text" data-field="notes" value="${escapeAttr(payment.notes || "")}" /></td>
-    <td data-label="">
-      <button type="button" data-role="receipt-btn" class="receipt-btn ${payment.status !== "unpaid" ? "visible" : ""}">🖨 سند قبض</button>
-      <span class="save-indicator" data-role="save-indicator">✓ حُفظ</span>
-    </td>
+    <td data-label=""><span class="save-indicator" data-role="save-indicator">✓ حُفظ</span></td>
   `;
   return tr;
 }

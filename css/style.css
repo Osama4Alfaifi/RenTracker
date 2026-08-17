@@ -403,6 +403,10 @@ button:active {
   background: linear-gradient(120deg, var(--primary) 0%, var(--primary-dark) 100%);
 }
 
+.table-scroll {
+  overflow-x: auto;
+}
+
 .unit-table {
   width: 100%;
   border-collapse: collapse;
