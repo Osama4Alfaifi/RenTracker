@@ -177,7 +177,7 @@ async function renderDashboard() {
   const section = document.createElement("div");
   section.className = "building-section";
   section.innerHTML = `
-    <h2>${building.name}</h2>
+    <h2>${escapeAttr(building.name)}</h2>
     <div class="table-scroll">
       <table class="unit-table">
         <thead>
@@ -260,7 +260,7 @@ function buildUnitRow(unit, payment) {
   tr.dataset.unitId = unit.id;
 
   tr.innerHTML = `
-    <td data-label="الوحدة">${unit.label} <span style="color:var(--muted)">(${unit.type})</span></td>
+    <td data-label="الوحدة">${escapeAttr(unit.label)} <span style="color:var(--muted)">(${escapeAttr(unit.type)})</span></td>
     <td data-label="المستأجر">
       ${escapeAttr(payment.tenantName || "شاغرة")}
       ${payment.tenantPhone ? `<br><span style="color:var(--muted);font-size:12px">جوال: ${escapeAttr(payment.tenantPhone)}</span>` : ""}
@@ -385,7 +385,12 @@ async function saveRow(tr, payment) {
 }
 
 function escapeAttr(str) {
-  return String(str).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 // ---------------- History ----------------
@@ -400,7 +405,7 @@ let historyUnitsById = new Map();
 async function loadHistoryTab() {
   if (!state.buildings.length) state.buildings = await getBuildings();
   historyBuildingSelect.innerHTML = state.buildings
-    .map((b) => `<option value="${b.id}">${b.name}</option>`)
+    .map((b) => `<option value="${b.id}">${escapeAttr(b.name)}</option>`)
     .join("");
   if (state.buildings.length) await loadHistoryUnits(state.buildings[0].id);
 }
@@ -417,7 +422,7 @@ async function loadHistoryUnits(buildingId) {
   historyUnitsById = new Map(units.map((u) => [u.id, u]));
   historyUnitSelect.innerHTML =
     `<option value="">كل الوحدات (المجمع كاملًا)</option>` +
-    units.map((u) => `<option value="${u.id}">${u.label} (${u.type})</option>`).join("");
+    units.map((u) => `<option value="${u.id}">${escapeAttr(u.label)} (${escapeAttr(u.type)})</option>`).join("");
   historyUnitSelect.value = "";
   await renderHistory("", buildingId);
   await renderTenancyHistory("", buildingId);
@@ -437,14 +442,14 @@ async function renderHistory(unitId, buildingId) {
         <div class="history-row">
           <span class="month">${ARABIC_MONTHS[r.month - 1]} ${r.year}</span>
           ${!unitId && unitLabel ? `<span class="tenant">${escapeAttr(unitLabel)}</span>` : ""}
-          <span class="tenant">${r.tenantName || "—"}</span>
+          <span class="tenant">${escapeAttr(r.tenantName || "—")}</span>
           <span class="status-toggle ${r.status}">${STATUS_LABELS[r.status] || r.status}</span>
           <span>الإيجار: ${r.rentDue ?? 0}</span>
           <span>كاش: ${r.cashAmount ?? 0}</span>
           <span>${transferLabel ? `${transferLabel}: ${r.transferAmount}` : "بدون تحويل"}</span>
           <span>المتأخر: ${r.outstanding ?? 0}</span>
-          <span>${r.paidDate || "—"}</span>
-          <span style="color:var(--muted)">${r.notes || ""}</span>
+          <span>${escapeAttr(r.paidDate || "—")}</span>
+          <span style="color:var(--muted)">${escapeAttr(r.notes || "")}</span>
         </div>
       `;
     })
@@ -462,7 +467,7 @@ async function renderTenancyHistory(unitId, buildingId) {
       const unitLabel = historyUnitsById.get(t.unitId)?.label;
       return `
         <div class="history-row">
-          <span class="month">${t.moveInDate || "—"} ← ${t.moveOutDate || "حتى الآن"}</span>
+          <span class="month">${escapeAttr(t.moveInDate || "—")} ← ${escapeAttr(t.moveOutDate || "حتى الآن")}</span>
           ${!unitId && unitLabel ? `<span class="tenant">${escapeAttr(unitLabel)}</span>` : ""}
           <span class="tenant">${escapeAttr(t.tenantName || "—")}</span>
           <span>${t.tenantPhone ? `جوال المستأجر: ${escapeAttr(t.tenantPhone)}` : ""}</span>
@@ -498,7 +503,7 @@ async function loadUnitsAdminTab() {
   const section = document.createElement("div");
   section.className = "units-admin-building";
   section.innerHTML = `
-    <h2>${building.name}</h2>
+    <h2>${escapeAttr(building.name)}</h2>
     <div data-role="unit-rows"></div>
     <div class="unit-admin-row" data-role="add-row">
       <input type="text" placeholder="اسم الوحدة (مثال: غرفة 16)" data-new="label" />
@@ -571,7 +576,7 @@ async function buildUnitAdminRow(unit) {
       ${field("رقم العقد", `<input type="text" data-tfield="contractNumber" value="${escapeAttr(tenancy.contractNumber || "")}" />`)}
       ${field("اسم الكفيل", `<input type="text" data-tfield="guarantorName" value="${escapeAttr(tenancy.guarantorName || "")}" />`)}
       ${field("جوال الكفيل", `<input type="text" data-tfield="guarantorPhone" value="${escapeAttr(tenancy.guarantorPhone || "")}" />`)}
-      ${field("تاريخ التأجير (بداية السكن)", `<input type="date" data-tfield="moveInDate" value="${tenancy.moveInDate || ""}" />`)}
+      ${field("تاريخ التأجير (بداية السكن)", `<input type="date" data-tfield="moveInDate" value="${escapeAttr(tenancy.moveInDate || "")}" />`)}
       ${field("تاريخ الخروج (عند الإنهاء)", `<input type="date" data-role="move-out-date" value="${todayStr()}" />`)}
       <button type="button" data-role="end-tenancy-btn">تسجيل الخروج</button>
     `;

@@ -51,12 +51,19 @@ export function numberToArabicWords(num) {
   return parts.join(" و");
 }
 
-function loadScript(src) {
+// Subresource Integrity hashes pin these CDN files to the exact bytes we
+// tested against — if cdnjs ever served something different (compromise,
+// tampering, or a silent file swap), the browser refuses to run it instead
+// of silently executing arbitrary code with full access to this app/session.
+function loadScript(src, integrity) {
   return new Promise((resolve, reject) => {
     if (document.querySelector(`script[data-src="${src}"]`)) return resolve();
     const s = document.createElement("script");
     s.src = src;
     s.dataset.src = src;
+    s.integrity = integrity;
+    s.crossOrigin = "anonymous";
+    s.referrerPolicy = "no-referrer";
     s.onload = resolve;
     s.onerror = () => reject(new Error(`فشل تحميل ${src}`));
     document.head.appendChild(s);
@@ -64,8 +71,14 @@ function loadScript(src) {
 }
 
 async function ensurePdfLibs() {
-  await loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
-  await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+  await loadScript(
+    "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
+    "sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H"
+  );
+  await loadScript(
+    "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
+    "sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk"
+  );
 }
 
 function buildReceiptHtml({ receivedFrom, amount, methodText, unitLabel, buildingName, monthName, monthNum, year, dateStr }) {
@@ -82,7 +95,7 @@ function buildReceiptHtml({ receivedFrom, amount, methodText, unitLabel, buildin
         <div>مبلغا وقدره: ${amount.toLocaleString("en")} (${amountWords})</div>
         <div>كاش/تحويل: ${methodText}</div>
         <div>وذلك عن: إيجار ${escapeHtml(unitLabel)} في مجمع ${escapeHtml(buildingName)} لشهر ${monthNum} (${monthName}) ${year}</div>
-        <div>بتاريخ: ${dateStr}</div>
+        <div>بتاريخ: ${escapeHtml(dateStr)}</div>
       </div>
       <div style="padding:10px 28px;font-size:16px;font-weight:700;border-top:3px solid #9c7a2d;color:#1c2333;">
         ملحوظة: تم عمل نسختين من هذا السند نسخه مع المكتب ونسخة مع المستأجر
