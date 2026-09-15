@@ -178,6 +178,7 @@ async function renderDashboard() {
   section.className = "building-section";
   section.innerHTML = `
     <h2>${escapeAttr(building.name)}</h2>
+    <div class="status-grid" data-role="status-grid"></div>
     <div class="table-scroll">
       <table class="unit-table">
         <thead>
@@ -191,11 +192,26 @@ async function renderDashboard() {
     </div>
   `;
   const tbody = section.querySelector("tbody");
+  const statusGrid = section.querySelector('[data-role="status-grid"]');
 
   for (const row of rows) {
     state.rowsByUnitId.set(row.unit.id, row.payment);
     state.unitsById.set(row.unit.id, row.unit);
     tbody.appendChild(buildUnitRow(row.unit, row.payment));
+
+    const tile = document.createElement("button");
+    tile.type = "button";
+    tile.className = `status-tile ${row.payment.status}`;
+    tile.dataset.unitId = row.unit.id;
+    tile.title = `${row.unit.label} — ${STATUS_LABELS[row.payment.status]}`;
+    tile.textContent = row.unit.label;
+    tile.addEventListener("click", () => {
+      const tr = tbody.querySelector(`tr[data-unit-id="${row.unit.id}"]`);
+      tr?.scrollIntoView({ behavior: "smooth", block: "center" });
+      tr?.classList.add("row-flash");
+      setTimeout(() => tr?.classList.remove("row-flash"), 1200);
+    });
+    statusGrid.appendChild(tile);
   }
 
   buildingsContainer.appendChild(section);
@@ -325,6 +341,9 @@ buildingsContainer.addEventListener("change", (e) => {
   if (waBtn) waBtn.classList.toggle("visible", status !== "paid");
   const receiptBtn = tr.querySelector('[data-role="receipt-btn"]');
   if (receiptBtn) receiptBtn.classList.toggle("visible", status !== "unpaid");
+
+  const tile = buildingsContainer.querySelector(`.status-tile[data-unit-id="${tr.dataset.unitId}"]`);
+  if (tile) tile.className = `status-tile ${status}`;
 
   saveRow(tr, payment);
 });

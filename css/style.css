@@ -395,6 +395,48 @@ button:active {
   box-shadow: var(--shadow-sm);
 }
 
+.status-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.status-tile {
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.status-tile.paid {
+  background: var(--paid);
+  color: white;
+}
+
+.status-tile.partial {
+  background: var(--partial);
+  color: white;
+}
+
+.status-tile.unpaid {
+  background: var(--unpaid);
+  color: white;
+}
+
+.row-flash {
+  animation: row-flash-anim 1.2s ease-out;
+}
+
+@keyframes row-flash-anim {
+  0%, 40% { background: var(--primary-light); }
+  100% { background: transparent; }
+}
+
 .building-section h2 {
   margin: 0;
   padding: 16px 20px;
