@@ -44,6 +44,14 @@ export function computeStatus(rentDue, cashAmount, transferAmount) {
   return { status, outstanding };
 }
 
+export function getPaymentParts(payment) {
+  if (Array.isArray(payment.parts)) return payment.parts;
+  const cashAmount = Number(payment.cashAmount) || 0;
+  const transferAmount = Number(payment.transferAmount) || 0;
+  if (!cashAmount && !transferAmount) return [];
+  return [{ cashAmount, transferAmount, transferMethod: payment.transferMethod || "", paidDate: payment.paidDate || "", notes: payment.notes || "" }];
+}
+
 export async function getBuildings() {
   const snap = await getDocs(query(collection(db, BUILDINGS), orderBy("order")));
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -168,6 +176,7 @@ export async function getMonthRows(units, year, month) {
         outstanding: baseRent + previousOutstanding,
         paidDate: null,
         notes: "",
+        parts: [],
       },
       isNew: true,
     });
@@ -228,6 +237,10 @@ export async function getUnitsByTenantPhone(tenantPhone, year, month) {
 
 export async function savePayment(payment) {
   const id = paymentId(payment.unitId, payment.year, payment.month);
+  if (Array.isArray(payment.parts)) {
+    payment.cashAmount = payment.parts.reduce((sum, part) => sum + (Number(part.cashAmount) || 0), 0);
+    payment.transferAmount = payment.parts.reduce((sum, part) => sum + (Number(part.transferAmount) || 0), 0);
+  }
   const { status, outstanding } = computeStatus(payment.rentDue, payment.cashAmount, payment.transferAmount);
   await setDoc(
     doc(db, PAYMENTS, id),

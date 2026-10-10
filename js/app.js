@@ -18,6 +18,7 @@ import {
   endTenancy,
   updateTenancy,
   computeStatus,
+  getPaymentParts,
 } from "./db.js";
 import { downloadReceiptPdf } from "./receipt.js";
 
@@ -197,7 +198,8 @@ async function renderDashboard() {
   for (const row of rows) {
     state.rowsByUnitId.set(row.unit.id, row.payment);
     state.unitsById.set(row.unit.id, row.unit);
-    tbody.appendChild(buildUnitRow(row.unit, row.payment));
+    const parts = getPaymentParts(row.payment);
+    (parts.length ? parts : [null]).forEach((part, index) => tbody.appendChild(buildUnitRow(row.unit, row.payment, part, index)));
 
     const tile = document.createElement("button");
     tile.type = "button";
@@ -271,9 +273,10 @@ function combinedReminderMessage(matches, year, month) {
   );
 }
 
-function buildUnitRow(unit, payment) {
+function buildUnitRow(unit, payment, part, partIndex) {
   const tr = document.createElement("tr");
   tr.dataset.unitId = unit.id;
+  tr.dataset.partIndex = partIndex;
 
   tr.innerHTML = `
     <td data-label="الوحدة">${escapeAttr(unit.label)} <span style="color:var(--muted)">(${escapeAttr(unit.type)})</span></td>
@@ -285,13 +288,13 @@ function buildUnitRow(unit, payment) {
       ${payment.guarantorName ? `<br><span style="color:var(--muted);font-size:12px">كفيل: ${escapeAttr(payment.guarantorName)}${payment.guarantorPhone ? " - " + escapeAttr(payment.guarantorPhone) : ""}</span>` : ""}
     </td>
     <td data-label="الإيجار"><input type="number" data-field="rentDue" value="${payment.rentDue ?? 0}" min="0" /></td>
-    <td data-label="كاش"><input type="number" data-field="cashAmount" value="${payment.cashAmount ?? 0}" min="0" /></td>
-    <td data-label="تحويل"><input type="number" data-field="transferAmount" value="${payment.transferAmount ?? 0}" min="0" /></td>
+    <td data-label="كاش"><input type="number" data-field="cashAmount" value="${part?.cashAmount ?? ""}" min="0" placeholder="0" /></td>
+    <td data-label="تحويل"><input type="number" data-field="transferAmount" value="${part?.transferAmount ?? ""}" min="0" placeholder="0" /></td>
     <td data-label="نوع التحويل">
-      <select data-field="transferMethod" class="method-field ${payment.transferAmount > 0 ? "visible" : ""}">
+      <select data-field="transferMethod" class="method-field visible">
         <option value="">اختر</option>
-        <option value="deposit" ${payment.transferMethod === "deposit" ? "selected" : ""}>إيداع مباشر</option>
-        <option value="ejar" ${payment.transferMethod === "ejar" ? "selected" : ""}>إيجار (ejar)</option>
+        <option value="deposit" ${part?.transferMethod === "deposit" ? "selected" : ""}>إيداع مباشر</option>
+        <option value="ejar" ${part?.transferMethod === "ejar" ? "selected" : ""}>إيجار (ejar)</option>
       </select>
     </td>
     <td data-label="المتأخر" data-role="outstanding" style="color:${payment.outstanding > 0 ? "var(--unpaid)" : "var(--muted)"}">${(payment.outstanding ?? 0).toLocaleString("ar")}</td>
@@ -300,10 +303,10 @@ function buildUnitRow(unit, payment) {
       <br><button type="button" data-role="receipt-btn" class="receipt-btn ${payment.status !== "unpaid" ? "visible" : ""}">🖨 سند قبض</button>
     </td>
     <td data-label="تاريخ الدفع">
-      <input type="date" data-field="paidDate" class="date-field ${payment.status !== "unpaid" ? "visible" : ""}" value="${payment.paidDate || ""}" />
+      <input type="date" data-field="paidDate" class="date-field visible" value="${part?.paidDate || ""}" />
     </td>
-    <td data-label="ملاحظات"><input type="text" data-field="notes" value="${escapeAttr(payment.notes || "")}" /></td>
-    <td data-label=""><span class="save-indicator" data-role="save-indicator">✓ حُفظ</span></td>
+    <td data-label="ملاحظات"><input type="text" data-field="notes" value="${escapeAttr(part?.notes || payment.notes || "")}" /></td>
+    <td data-label=""><button type="button" data-role="add-part">+ دفعة</button> <span class="save-indicator" data-role="save-indicator">✓ حُفظ</span></td>
   `;
   return tr;
 }
@@ -316,10 +319,17 @@ buildingsContainer.addEventListener("change", (e) => {
   const payment = state.rowsByUnitId.get(unitId);
   if (!payment) return;
 
-  if (field === "rentDue" || field === "cashAmount" || field === "transferAmount") {
+  const partIndex = Number(tr.dataset.partIndex);
+  if (field === "rentDue") {
     payment[field] = Number(e.target.value) || 0;
   } else {
-    payment[field] = e.target.value;
+    if (!Array.isArray(payment.parts)) payment.parts = getPaymentParts(payment);
+    while (payment.parts.length <= partIndex) payment.parts.push({});
+    payment.parts[partIndex][field] = ["cashAmount", "transferAmount"].includes(field)
+      ? Number(e.target.value) || 0
+      : e.target.value;
+    payment.cashAmount = payment.parts.reduce((sum, p) => sum + (Number(p.cashAmount) || 0), 0);
+    payment.transferAmount = payment.parts.reduce((sum, p) => sum + (Number(p.transferAmount) || 0), 0);
   }
 
   const { status, outstanding } = computeStatus(payment.rentDue, payment.cashAmount, payment.transferAmount);
@@ -349,6 +359,15 @@ buildingsContainer.addEventListener("change", (e) => {
 });
 
 buildingsContainer.addEventListener("click", async (e) => {
+  if (e.target.closest('[data-role="add-part"]')) {
+    const tr = e.target.closest("tr");
+    const payment = state.rowsByUnitId.get(tr.dataset.unitId);
+    if (!Array.isArray(payment.parts)) payment.parts = getPaymentParts(payment);
+    payment.parts.push({ cashAmount: 0, transferAmount: 0, transferMethod: "", paidDate: todayStr(), notes: "" });
+    await savePayment(payment);
+    await renderDashboard();
+    return;
+  }
   const waBtn = e.target.closest('[data-role="whatsapp-btn"]');
   if (waBtn) {
     const tr = waBtn.closest("tr");
