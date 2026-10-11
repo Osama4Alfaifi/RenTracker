@@ -301,12 +301,13 @@ function buildUnitRow(unit, payment, part, partIndex) {
     <td data-label="الحالة">
       <span class="status-toggle ${payment.status}" data-role="status-badge">${STATUS_LABELS[payment.status]}</span>
       <br><button type="button" data-role="receipt-btn" class="receipt-btn ${payment.status !== "unpaid" ? "visible" : ""}">🖨 سند قبض</button>
+      <br><button type="button" data-role="add-part" class="add-part-btn">+ دفعة</button>
     </td>
     <td data-label="تاريخ الدفع">
       <input type="date" data-field="paidDate" class="date-field visible" value="${part?.paidDate || ""}" />
     </td>
     <td data-label="ملاحظات"><input type="text" data-field="notes" value="${escapeAttr(part?.notes || payment.notes || "")}" /></td>
-    <td data-label=""><button type="button" data-role="add-part">+ دفعة</button> <span class="save-indicator" data-role="save-indicator">✓ حُفظ</span></td>
+    <td data-label=""><span class="save-indicator" data-role="save-indicator">✓ حُفظ</span></td>
   `;
   return tr;
 }

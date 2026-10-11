@@ -447,11 +447,35 @@ button:active {
 
 .table-scroll {
   overflow-x: auto;
+  width: 100%;
+  scrollbar-width: auto;
 }
 
 .unit-table {
   width: 100%;
+  min-width: 1180px;
   border-collapse: collapse;
+}
+
+.unit-table td[data-label="ملاحظات"],
+.unit-table th:nth-last-child(2) {
+  min-width: 180px;
+}
+
+.add-part-btn {
+  margin-top: 6px;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.add-part-btn:hover {
+  background: var(--primary-dark);
 }
 
 .unit-table th,
@@ -737,6 +761,9 @@ button:active {
   .unit-table td {
     display: block;
     width: 100%;
+  }
+  .unit-table {
+    min-width: 0;
   }
   .unit-table tr {
     padding: 12px;
