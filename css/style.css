@@ -474,6 +474,13 @@ button:active {
   cursor: pointer;
 }
 
+.payment-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
 .add-part-btn:hover {
   background: var(--primary-dark);
 }

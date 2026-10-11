@@ -303,8 +303,10 @@ function buildUnitRow(unit, payment, part, partIndex) {
     <td data-label="الحالة">
       ${isAdditionalPayment ? "" : `<span class="status-toggle ${payment.status}" data-role="status-badge">${STATUS_LABELS[payment.status]}</span>
       <br><button type="button" data-role="receipt-btn" class="receipt-btn ${payment.status !== "unpaid" ? "visible" : ""}">🖨 سند قبض</button>`}
-      <br><button type="button" data-role="add-part" class="add-part-btn">+ دفعة</button>
-      ${isAdditionalPayment ? `<button type="button" data-role="remove-part" class="remove-part-btn">حذف</button>` : ""}
+      <br><span class="payment-actions">
+        <button type="button" data-role="add-part" class="add-part-btn">+ دفعة</button>
+        ${isAdditionalPayment ? `<button type="button" data-role="remove-part" class="remove-part-btn">حذف</button>` : ""}
+      </span>
     </td>
     <td data-label="تاريخ الدفع">
       <input type="date" data-field="paidDate" class="date-field visible" value="${part?.paidDate || ""}" />
