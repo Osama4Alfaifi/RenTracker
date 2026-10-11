@@ -478,6 +478,41 @@ button:active {
   background: var(--primary-dark);
 }
 
+.remove-part-btn {
+  margin-top: 6px;
+  margin-inline-start: 4px;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--unpaid);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.remove-part-btn:hover {
+  filter: brightness(0.9);
+}
+
+.additional-payment-row td:nth-child(1),
+.additional-payment-row td:nth-child(2),
+.additional-payment-row td:nth-child(7),
+.additional-payment-row td:nth-child(10) {
+  color: transparent;
+}
+
+.additional-payment-row td:nth-child(1)::before,
+.additional-payment-row td:nth-child(2)::before,
+.additional-payment-row td:nth-child(7)::before,
+.additional-payment-row td:nth-child(10)::before {
+  display: none;
+}
+
+.additional-payment-row td:nth-child(10) input {
+  display: none;
+}
+
 .unit-table th,
 .unit-table td {
   padding: 12px;

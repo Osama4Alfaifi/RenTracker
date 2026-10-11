@@ -277,15 +277,17 @@ function buildUnitRow(unit, payment, part, partIndex) {
   const tr = document.createElement("tr");
   tr.dataset.unitId = unit.id;
   tr.dataset.partIndex = partIndex;
+  const isAdditionalPayment = partIndex > 0;
+  if (isAdditionalPayment) tr.classList.add("additional-payment-row");
 
   tr.innerHTML = `
-    <td data-label="الوحدة">${escapeAttr(unit.label)} <span style="color:var(--muted)">(${escapeAttr(unit.type)})</span></td>
+    <td data-label="الوحدة">${isAdditionalPayment ? "" : `${escapeAttr(unit.label)} <span style="color:var(--muted)">(${escapeAttr(unit.type)})</span>`}</td>
     <td data-label="المستأجر">
-      ${escapeAttr(payment.tenantName || "شاغرة")}
+      ${isAdditionalPayment ? "" : `${escapeAttr(payment.tenantName || "شاغرة")}
       ${payment.tenantPhone ? `<br><span style="color:var(--muted);font-size:12px">جوال: ${escapeAttr(payment.tenantPhone)}</span>` : ""}
       ${payment.tenantPhone ? `<br><button type="button" data-role="whatsapp-btn" class="whatsapp-btn ${payment.status !== "paid" ? "visible" : ""}">تذكير واتساب</button>` : ""}
       ${payment.contractNumber ? `<br><span style="color:var(--muted);font-size:12px">عقد: ${escapeAttr(payment.contractNumber)}</span>` : ""}
-      ${payment.guarantorName ? `<br><span style="color:var(--muted);font-size:12px">كفيل: ${escapeAttr(payment.guarantorName)}${payment.guarantorPhone ? " - " + escapeAttr(payment.guarantorPhone) : ""}</span>` : ""}
+      ${payment.guarantorName ? `<br><span style="color:var(--muted);font-size:12px">كفيل: ${escapeAttr(payment.guarantorName)}${payment.guarantorPhone ? " - " + escapeAttr(payment.guarantorPhone) : ""}</span>` : ""}`}
     </td>
     <td data-label="الإيجار"><input type="number" data-field="rentDue" value="${payment.rentDue ?? 0}" min="0" /></td>
     <td data-label="كاش"><input type="number" data-field="cashAmount" value="${part?.cashAmount ?? ""}" min="0" placeholder="0" /></td>
@@ -297,16 +299,17 @@ function buildUnitRow(unit, payment, part, partIndex) {
         <option value="ejar" ${part?.transferMethod === "ejar" ? "selected" : ""}>إيجار (ejar)</option>
       </select>
     </td>
-    <td data-label="المتأخر" data-role="outstanding" style="color:${payment.outstanding > 0 ? "var(--unpaid)" : "var(--muted)"}">${(payment.outstanding ?? 0).toLocaleString("ar")}</td>
+    <td data-label="المتأخر" data-role="outstanding" style="color:${payment.outstanding > 0 ? "var(--unpaid)" : "var(--muted)"}">${isAdditionalPayment ? "" : (payment.outstanding ?? 0).toLocaleString("ar")}</td>
     <td data-label="الحالة">
-      <span class="status-toggle ${payment.status}" data-role="status-badge">${STATUS_LABELS[payment.status]}</span>
-      <br><button type="button" data-role="receipt-btn" class="receipt-btn ${payment.status !== "unpaid" ? "visible" : ""}">🖨 سند قبض</button>
+      ${isAdditionalPayment ? "" : `<span class="status-toggle ${payment.status}" data-role="status-badge">${STATUS_LABELS[payment.status]}</span>
+      <br><button type="button" data-role="receipt-btn" class="receipt-btn ${payment.status !== "unpaid" ? "visible" : ""}">🖨 سند قبض</button>`}
       <br><button type="button" data-role="add-part" class="add-part-btn">+ دفعة</button>
+      ${isAdditionalPayment ? `<button type="button" data-role="remove-part" class="remove-part-btn">حذف</button>` : ""}
     </td>
     <td data-label="تاريخ الدفع">
       <input type="date" data-field="paidDate" class="date-field visible" value="${part?.paidDate || ""}" />
     </td>
-    <td data-label="ملاحظات"><input type="text" data-field="notes" value="${escapeAttr(part?.notes || payment.notes || "")}" /></td>
+    <td data-label="ملاحظات"><input type="text" data-field="notes" value="${escapeAttr(part?.notes || (isAdditionalPayment ? "" : payment.notes || ""))}" /></td>
     <td data-label=""><span class="save-indicator" data-role="save-indicator">✓ حُفظ</span></td>
   `;
   return tr;
@@ -342,8 +345,10 @@ buildingsContainer.addEventListener("change", (e) => {
   tr.querySelector('[data-field="paidDate"]').classList.toggle("visible", status !== "unpaid");
   tr.querySelector('[data-field="paidDate"]').value = payment.paidDate || "";
   const badge = tr.querySelector('[data-role="status-badge"]');
-  badge.className = `status-toggle ${status}`;
-  badge.textContent = STATUS_LABELS[status];
+  if (badge) {
+    badge.className = `status-toggle ${status}`;
+    badge.textContent = STATUS_LABELS[status];
+  }
   const outstandingCell = tr.querySelector('[data-role="outstanding"]');
   outstandingCell.textContent = outstanding.toLocaleString("ar");
   outstandingCell.style.color = outstanding > 0 ? "var(--unpaid)" : "var(--muted)";
@@ -360,6 +365,17 @@ buildingsContainer.addEventListener("change", (e) => {
 });
 
 buildingsContainer.addEventListener("click", async (e) => {
+  if (e.target.closest('[data-role="remove-part"]')) {
+    const tr = e.target.closest("tr");
+    const payment = state.rowsByUnitId.get(tr.dataset.unitId);
+    const partIndex = Number(tr.dataset.partIndex);
+    if (!payment || !Array.isArray(payment.parts) || partIndex < 1) return;
+    if (!window.confirm("هل تريد حذف هذه الدفعة؟")) return;
+    payment.parts.splice(partIndex, 1);
+    await savePayment(payment);
+    await renderDashboard();
+    return;
+  }
   if (e.target.closest('[data-role="add-part"]')) {
     const tr = e.target.closest("tr");
     const payment = state.rowsByUnitId.get(tr.dataset.unitId);
