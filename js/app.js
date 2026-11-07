@@ -21,6 +21,7 @@ import {
   getPaymentParts,
 } from "./db.js";
 import { downloadReceiptPdf } from "./receipt.js";
+import { loadAnalyticsTab } from "./analytics.js";
 
 const ARABIC_MONTHS = [
   "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
@@ -106,11 +107,17 @@ function switchTab(tab) {
   document.querySelectorAll(".tab-btn").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
   document.querySelectorAll(".tab-panel").forEach((p) => p.classList.toggle("active", p.id === `${tab}-tab`));
   if (tab === "dashboard") initDashboard();
+  if (tab === "analytics") loadAnalyticsTabWrapped();
   if (tab === "history") loadHistoryTab();
   if (tab === "units") loadUnitsAdminTab();
 }
 
 // ---------------- Dashboard ----------------
+
+async function loadAnalyticsTabWrapped() {
+  if (!state.buildings.length) state.buildings = await getBuildings();
+  await loadAnalyticsTab(state.buildings);
+}
 
 const seedBanner = document.getElementById("seed-banner");
 const monthLabel = document.getElementById("month-label");
@@ -235,7 +242,14 @@ function renderSummaryBar() {
     else if (payment.status === "partial") partialCount += 1;
   }
 
+  const collectionRate = totalDue > 0 ? Math.round((totalCollected / totalDue) * 100) : 0;
+
   summaryBar.innerHTML = `
+    <div class="summary-chip rate-chip">
+      <span class="value">${collectionRate.toLocaleString("ar")}٪</span>
+      <span class="label">نسبة التحصيل</span>
+      <div class="chip-bar"><span style="width:${Math.min(100, collectionRate)}%"></span></div>
+    </div>
     <div class="summary-chip"><span class="value">${totalUnits}</span><span class="label">إجمالي الوحدات</span></div>
     <div class="summary-chip"><span class="value">${paidCount}</span><span class="label">مدفوع بالكامل</span></div>
     <div class="summary-chip"><span class="value">${partialCount}</span><span class="label">دفع جزئي</span></div>

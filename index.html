@@ -36,6 +36,7 @@
 
     <nav class="tabs">
       <button class="tab-btn active" data-tab="dashboard">لوحة المتابعة</button>
+      <button class="tab-btn" data-tab="analytics">التحليلات</button>
       <button class="tab-btn" data-tab="history">السجل</button>
       <button class="tab-btn" data-tab="units">إدارة الوحدات</button>
     </nav>
@@ -58,6 +59,48 @@
       <div id="summary-bar" class="summary-bar"></div>
 
       <div id="buildings-container"></div>
+    </section>
+
+    <!-- التحليلات -->
+    <section id="analytics-tab" class="tab-panel">
+      <div class="analytics-toolbar">
+        <label class="an-field">المجمع
+          <select id="analytics-building-select"></select>
+        </label>
+        <div class="month-switcher an-month">
+          <button id="an-prev-month" class="btn-ghost">‹ السابق</button>
+          <span id="an-month-label" class="month-label"></span>
+          <button id="an-next-month" class="btn-ghost">التالي ›</button>
+        </div>
+      </div>
+      <div id="analytics-empty" class="analytics-empty" hidden>
+        <p>لا توجد بيانات كافية لعرض التحليلات بعد.</p>
+      </div>
+      <div id="analytics-content">
+        <div id="analytics-kpis" class="kpi-grid"></div>
+        <div class="chart-grid">
+          <div class="chart-card">
+            <h3>توزيع حالة السداد — الشهر الحالي</h3>
+            <div class="chart-wrap"><canvas id="chart-status"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h3>طريقة التحصيل — الشهر الحالي</h3>
+            <div class="chart-wrap"><canvas id="chart-method"></canvas></div>
+          </div>
+          <div class="chart-card chart-card-wide">
+            <h3>المُحصّل مقابل المتأخر — آخر ١٢ شهرًا</h3>
+            <div class="chart-wrap"><canvas id="chart-trend"></canvas></div>
+          </div>
+          <div class="chart-card chart-card-wide">
+            <h3>نسبة التحصيل الشهرية — آخر ١٢ شهرًا</h3>
+            <div class="chart-wrap"><canvas id="chart-rate"></canvas></div>
+          </div>
+          <div class="chart-card chart-card-wide" id="chart-building-card">
+            <h3>المتأخرات حسب المجمع — الشهر الحالي</h3>
+            <div class="chart-wrap"><canvas id="chart-buildings"></canvas></div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- السجل -->
@@ -83,6 +126,7 @@
     </section>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
